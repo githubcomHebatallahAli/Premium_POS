@@ -25,6 +25,8 @@ public function create(array $data): Shipment
             'paidAmount' => $data['paidAmount'] ?? 0,
             'creationDate' => now(),
             'payment' => isset($data['payment']) ? $data['payment'] : null,
+            'totalPrice' => 0, // قيمة مؤقتة
+            'invoiceAfterDiscount' => 0, // قيمة مؤقتة
         ]);
 
         $total = 0;
@@ -38,9 +40,7 @@ public function create(array $data): Shipment
 
             $product = Product::findOrFail($productId);
 
-            // سعر القطعة الواحدة
             $unitPrice = $productData['unitPrice'] ?? $product->purchasePrice;
-            
             if (empty($unitPrice)) {
                 $unitPrice = $product->purchasePrice;
             }
@@ -63,14 +63,19 @@ public function create(array $data): Shipment
             $total += $totalPrice;
         }
 
-        // Debug: تأكد من أن الـ total صحيح
-        Log::info("Total calculated: " . $total);
+        // هنا الحل! نحسب كل حاجة مباشرة بدون دالة منفصلة
+        $discount = $shipment->discount ?? 0;
+        $extra = $shipment->extraAmount ?? 0;
+        
+        $final = $total - $discount + $extra;
+        $remaining = $final - $shipment->paidAmount;
 
-        // حساب الإجماليات - نمرر الـ total للدالة
-        $this->calculateTotals($shipment, $total);
-
-        // تحديث الـ totalPrice مباشرة
-        $shipment->update(['totalPrice' => $total]);
+        $shipment->update([
+            'totalPrice' => $total,
+            'invoiceAfterDiscount' => $final,
+            'remainingAmount' => $remaining > 0 ? $remaining : 0,
+            'status' => $remaining <= 0 ? 'completed' : 'indebted'
+        ]);
 
         $shipment->updateShipmentProductsCount();
 
