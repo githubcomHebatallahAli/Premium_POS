@@ -145,7 +145,7 @@ public function calculateTotals(Shipment $shipment, float $total): void
 
     $shipment->update([
         'totalPrice' => $total,
-        'totalAfterDiscount' => $final,
+        'invoiceAfterDiscount' => $final,
         'remainingAmount' => $remaining > 0 ? $remaining : 0,
         'status' => $status
     ]);
