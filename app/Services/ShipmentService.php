@@ -9,49 +9,59 @@ use Illuminate\Support\Facades\DB;
 
 class ShipmentService
 {
-    public function create(array $data): Shipment
-    {
-        return DB::transaction(function () use ($data) {
-            $shipment = Shipment::create([
-                'supplier_id' => $data['supplier_id'],
-                'importer' => $data['importer'] ?? null,
-                'admin_id' => auth()->id(),
-                'discount' => $data['discount'] ?? 0,
-                'discountType' => $data['discountType'] ?? 'percentage',
-                'extraAmount' => $data['extraAmount'] ?? 0,
-                'taxType' => $data['taxType'] ?? 'percentage',
-                'paidAmount' => $data['paidAmount'] ?? 0,
-                'creationDate' => now(),
-                'payment' => $data['payment'] ?? 'cash',
-            ]);
+public function create(array $data): Shipment
+{
+    return DB::transaction(function () use ($data) {
+        // إنشاء الشحنة
+        $shipment = Shipment::create([
+            'supplier_id' => $data['supplier_id'],
+            'importer' => $data['importer'] ?? null,
+            'admin_id' => auth()->id(),
+            'discount' => $data['discount'] ?? 0,
+            'discountType' => $data['discountType'] ?? 'percentage',
+            'extraAmount' => $data['extraAmount'] ?? 0,
+            'taxType' => $data['taxType'] ?? 'percentage',
+            'paidAmount' => $data['paidAmount'] ?? 0,
+            'creationDate' => now(),
+            'payment' => $data['payment'] ?? 'cash',
+        ]);
 
-            $total = 0;
+        $total = 0;
 
-            foreach ($data['products'] as $productData) {
-                $product = Product::findOrFail($productData['product_id']);
-
-                $shipmentProduct = ShipmentProduct::create([
-                    'shipment_id' => $shipment->id,
-                    'product_id' => $product->id,
-                    'quantity' => $productData['quantity'],
-                    'unitPrice' => $productData['unitPrice'],
-                    'totalPrice' => $productData['quantity'] * $productData['unitPrice'],
-                ]);
-
-                // تحديث سعر الشراء للمنتج
-                $product->update([
-                    'purchasePrice' => $productData['unitPrice'],
-                    'sellingPrice' => $productData['unitPrice'] * 1.2 // هامش ربح 20%
-                ]);
-
-                $total += $shipmentProduct->totalPrice;
+        foreach ($data['products'] as $productData) {
+            // استخدام 'id' إذا كان هو الـ key المرسل
+            $productId = $productData['id'] ?? $productData['product_id'] ?? null;
+            
+            if (!$productId) {
+                throw new \Exception("Product ID is required for all products");
             }
 
-            $this->calculateTotals($shipment, $total);
+            $product = Product::findOrFail($productId);
 
-            return $shipment->fresh(['products', 'supplier']);
-        });
-    }
+            // إنشاء منتج الشحنة
+            $shipmentProduct = ShipmentProduct::create([
+                'shipment_id' => $shipment->id,
+                'product_id' => $product->id,
+                'quantity' => $productData['quantity'],
+                'unitPrice' => $productData['unitPrice'],
+                'totalPrice' => $productData['quantity'] * $productData['unitPrice'],
+            ]);
+
+            // تحديث أسعار المنتج
+            $product->update([
+                'purchasePrice' => $productData['unitPrice'],
+                'sellingPrice' => $productData['unitPrice'] * 1.2 // هامش ربح 20%
+            ]);
+
+            $total += $shipmentProduct->totalPrice;
+        }
+
+        // حساب الإجماليات النهائية
+        $this->calculateTotals($shipment, $total);
+
+        return $shipment->fresh(['products.product', 'supplier']);
+    });
+}
 
     public function update(Shipment $shipment, array $data): Shipment
     {
