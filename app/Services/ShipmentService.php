@@ -131,7 +131,7 @@ public function calculateTotals(Shipment $shipment, float $total): void
         'status' => $status
     ]);
 
-    $shipment->updateShipmentProductCount();
+    $shipment->updateShipmentProductsCount();
 }
 
 public function fullReturn(Shipment $shipment): Shipment
