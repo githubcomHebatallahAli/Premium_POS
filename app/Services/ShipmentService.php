@@ -29,7 +29,6 @@ public function create(array $data): Shipment
         $total = 0;
 
         foreach ($data['products'] as $productData) {
-            // استخدام 'id' إذا كان هو الـ key المرسل
             $productId = $productData['id'] ?? $productData['product_id'] ?? null;
             
             if (!$productId) {
@@ -38,22 +37,33 @@ public function create(array $data): Shipment
 
             $product = Product::findOrFail($productId);
 
+            // سعر القطعة الواحدة
+            $unitPrice = $productData['unitPrice'] ?? $product->purchasePrice;
+            
+            // إذا unitPrice فاضي نستخدم سعر الشراء الحالي
+            if (empty($unitPrice)) {
+                $unitPrice = $product->purchasePrice;
+            }
+
+            // السعر الإجمالي للكمية
+            $totalPrice = $productData['quantity'] * $unitPrice;
+
             // إنشاء منتج الشحنة
             $shipmentProduct = ShipmentProduct::create([
                 'shipment_id' => $shipment->id,
                 'product_id' => $product->id,
                 'quantity' => $productData['quantity'],
-                'unitPrice' => $productData['unitPrice'],
-                'price' => $productData['quantity'] * $productData['unitPrice'], // total price
+                'unitPrice' => $unitPrice, // سعر القطعة
+                'price' => $totalPrice,    // السعر الإجمالي للكمية
             ]);
 
             // تحديث أسعار المنتج
             $product->update([
-                'purchasePrice' => $productData['unitPrice'],
-                'sellingPrice' => $productData['unitPrice'] * 1.2 // هامش ربح 20%
+                'purchasePrice' => $unitPrice,
+                'sellingPrice' => $unitPrice * 1.2 // هامش ربح 20%
             ]);
 
-            $total += $shipmentProduct->price;
+            $total += $totalPrice;
         }
 
         // حساب الإجماليات النهائية
@@ -62,7 +72,6 @@ public function create(array $data): Shipment
         // تحديث عدد المنتجات
         $shipment->updateShipmentProductsCount();
 
-        // إرجاع الشحنة مع العلاقات الصحيحة
         return $shipment->fresh(['products', 'supplier']);
     });
 }
