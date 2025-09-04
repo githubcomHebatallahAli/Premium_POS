@@ -25,10 +25,8 @@ class SupplierRequest extends FormRequest
     {
         return [
                'supplierName' => 'required|string',
-               'email' => 'nullable|string',
                'phoNum'=> 'nullable|string',
                'place' => 'nullable|string',
-               'status' => 'nullable|in:active,notActive',
                 'companyName' => 'nullable|string',
                 'description' => 'nullable|string',
         ];

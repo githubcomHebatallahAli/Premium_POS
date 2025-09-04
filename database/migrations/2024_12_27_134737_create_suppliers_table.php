@@ -14,13 +14,11 @@ return new class extends Migration
         Schema::create('suppliers', function (Blueprint $table) {
             $table->id();
             $table->string('supplierName');
-            $table->string('email')->unique()->nullable();
             $table->string('phoNum')->nullable();
             $table->string('place')->nullable();
             $table->string('companyName')->nullable();
             $table->text('description')->nullable();
             $table->unsignedBigInteger('shipmentsCount')->default(0);
-            $table->enum('status', ['active', 'notActive'])->default('active');
             $table->timestamp('creationDate')->nullable();
             $table->softDeletes();
             $table->timestamps();

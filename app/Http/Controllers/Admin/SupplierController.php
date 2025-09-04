@@ -42,13 +42,12 @@ class SupplierController extends Controller
 
     public function create(SupplierRequest $request)
     {
-        $this->authorize('create',Supplier::class);
+         $this->authorize('manage_users');
+        // $this->authorize('create',Supplier::class);
            $Supplier =Supplier::create ([
                 "supplierName" => $request->supplierName,
-                "email" => $request-> email,
                 "phoNum" => $request-> phoNum,
                 "place" => $request-> place,
-                "status" => 'active',
                 'companyName' => $request->companyName,
                 'description' => $request->description,
                 'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
@@ -72,7 +71,7 @@ class SupplierController extends Controller
             ], 404);
         }
 
-        $this->authorize('edit',$Supplier);
+        // $this->authorize('edit',$Supplier);
 
         return response()->json([
             'data' =>new SupplierResource($Supplier),
@@ -84,6 +83,7 @@ class SupplierController extends Controller
 
     public function update(SupplierRequest $request, string $id)
     {
+         $this->authorize('manage_users');
        $Supplier =Supplier::findOrFail($id);
 
        if (!$Supplier) {
@@ -92,13 +92,11 @@ class SupplierController extends Controller
         ], 404);
     }
     
-    $this->authorize('update',$Supplier);
+    // $this->authorize('update',$Supplier);
        $Supplier->update([
         "supplierName" => $request->supplierName,
-        "email" => $request-> email,
         "phoNum" => $request-> phoNum,
         "place" => $request-> place,
-        "status" => $request-> status,
         'companyName' => $request->companyName,
         'description' => $request->description,
         'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
@@ -149,42 +147,5 @@ return response()->json([
       return $this->forceDeleteModel(Supplier::class, $id);
   }
 
-  public function notActive(string $id)
-  {
 
-      $Supplier =Supplier::findOrFail($id);
-
-      if (!$Supplier) {
-       return response()->json([
-           'message' => "Supplier not found."
-       ]);
-   }
-      $this->authorize('notActive',$Supplier);
-
-      $Supplier->update(['status' => 'notActive']);
-
-      return response()->json([
-          'data' => new SupplierResource($Supplier),
-          'message' => 'Supplier has been Not Active.'
-      ]);
-  }
-
-  public function active(string $id)
-  {
-      $Supplier =Supplier::findOrFail($id);
-
-      if (!$Supplier) {
-       return response()->json([
-           'message' => "Supplier not found."
-       ]);
-   }
-      $this->authorize('active',$Supplier);
-
-      $Supplier->update(['status' => 'active']);
-
-      return response()->json([
-          'data' => new SupplierResource($Supplier),
-          'message' => 'Supplier has been Active.'
-      ]);
-  }
 }
