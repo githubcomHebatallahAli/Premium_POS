@@ -85,7 +85,7 @@ class CompanyController extends Controller
                 if ($Company->logo) {
                     Storage::disk('public')->delete( $Company->logo);
                 }
-                $logoPath = $request->file('logo')->store('Products', 'public');
+                $logoPath = $request->file('logo')->store('Company', 'public');
                  $Company->logo = $logoPath;
             }
 
