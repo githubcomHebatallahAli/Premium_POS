@@ -22,8 +22,9 @@ class AdminSeeder extends Seeder
             'address' => 'Moharram Bey',
             'role_id' => '1',
             'status' => 'active',
-
+            'salary' => '5000',
         ]);
+
         DB::table('admins')->insert([
             'name' => 'Admin',
             'email' => 'admin@mail.com',
@@ -32,8 +33,9 @@ class AdminSeeder extends Seeder
             'address' => 'Moharram Bey',
             'role_id' => '2',
             'status' => 'active',
-
+            'salary' => '5000',
         ]);
+
         DB::table('admins')->insert([
             'name' => 'Employee',
             'email' => 'employee@mail.com',
@@ -42,7 +44,7 @@ class AdminSeeder extends Seeder
             'address' => 'Moharram Bey',
             'role_id' => '3',
             'status' => 'active',
-
+            'salary' => '5000',
         ]);
     }
 }

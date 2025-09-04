@@ -20,8 +20,8 @@ return new class extends Migration
             $table->decimal('totalPrice', 15, 2)->default(0);
              $table->decimal('discount', 10, 2)->nullable();
             $table->decimal('extraAmount', 10, 2)->nullable();
-            $table->enum('discountType', ['percentage', 'pounds'])->default('pounds');
-            $table->enum('taxType', ['percentage', 'pounds'])->default('percentage');
+            $table->enum('discountType', ['percentage', 'pounds'])->nullable();
+            $table->enum('taxType', ['percentage', 'pounds'])->nullable();
             $table->decimal('invoiceAfterDiscount', 15, 2)->nullable();
             $table->decimal('paidAmount', 10, 2);
             $table->decimal('remainingAmount', 10, 2)->nullable();

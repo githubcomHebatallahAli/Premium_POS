@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\AdminChangePasswordRequest;
 use App\Http\Requests\Admin\ImgRequest;
 use App\Http\Requests\Admin\UpdateAdminRequest;
 use App\Http\Resources\Auth\AdminRegisterResource;
@@ -191,5 +192,25 @@ class AdminController extends Controller
     public function forceDelete(string $id)
     {
         return $this->forceDeleteModel(Admin::class, $id);
+    }
+    
+
+        public function changePassword(AdminChangePasswordRequest $request)
+    {
+        $admin = auth()->guard('admin')->user();
+
+        // $this->authorize('changePassword', $admin);
+        $admin = Admin::find($request->id);
+
+    if (!$admin) {
+        return response()->json(['message' => 'Admin not found.'], 404);
+    }
+
+        $admin->update([
+        'password' => $request->new_password
+    ]);
+        return response()->json([
+            'message' => 'Password changed successfully.'
+        ]);
     }
 }

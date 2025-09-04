@@ -20,4 +20,6 @@ Route::delete('/forceDelete/admin/{id}','forceDelete');
 Route::patch('notActive/admin/{id}', 'notActive');
 Route::patch('active/admin/{id}', 'active');
 Route::post('/update/photo/{id}', 'adminUpdateProfilePicture');
+
+Route::post('/changePassword/admin',  'changePassword');
    });

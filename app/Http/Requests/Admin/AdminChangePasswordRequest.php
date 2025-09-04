@@ -1,14 +1,12 @@
 <?php
 
-namespace App\Http\Requests\Auth;
+namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
-use App\Rules\PhoneNumberExistsInTablesRule;
-use App\Rules\EmailExistsInUsersOrAdminsRule;
-use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Contracts\Validation\Validator;
 
-class ForgetPasswordRequest extends FormRequest
+class AdminChangePasswordRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -26,7 +24,8 @@ class ForgetPasswordRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required','email',new EmailExistsInUsersOrAdminsRule()],
+            'id' => 'required|exists:admins,id',
+            'new_password' => 'required|confirmed|string|min:6',
         ];
     }
 
