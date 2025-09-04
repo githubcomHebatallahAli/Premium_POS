@@ -78,7 +78,7 @@ class ProductController extends Controller
         $query->where('endDate', $request->endDate);
     }
 
-    $Product = $query->orderBy('created_at', 'desc')->get();
+    
 
         $Product = $Product->orderBy('created_at', 'desc')
                            ->paginate(10);
