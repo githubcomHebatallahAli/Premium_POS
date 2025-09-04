@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ShipmentRequest;
 use App\Http\Requests\Admin\UpdatePaidAmountRequest;
+use App\Http\Resources\Admin\ShipmentProductResource;
 use App\Http\Resources\Admin\ShipmentResource;
 use App\Models\Shipment;
 use App\Models\Supplier;
@@ -25,7 +26,7 @@ class ShipmentController extends Controller
 
         return response()->json([
             'message' => 'Shipment created successfully',
-            'data' => new ShipmentResource($shipment),
+            'data' => new ShipmentProductResource($shipment),
         ]);
     }
 
