@@ -29,7 +29,7 @@ return new class extends Migration
             $table->text('returnReason')->nullable();
             $table->enum('payment', ['visa','cash','wallet','instapay'])->nullable();
             $table->timestamp('creationDate')->nullable();
-            // $table->string('image')->nullable();
+            $table->text('description')->nullable();
             $table->softDeletes();
             $table->timestamps();
         });

@@ -40,6 +40,22 @@ class Admin extends Authenticatable  implements JWTSubject
         return $this->belongsTo(Role::class);
     }
 
+        public function invoices()
+{
+    return $this->hasMany(Invoice::class);
+}
+
+    public function shipments()
+{
+    return $this->hasMany(Shipment::class);
+}
+
+
+
+
+
+
+
     protected $hidden = [
         'password',
         'remember_token',

@@ -34,6 +34,7 @@ class ShipmentProductResource extends JsonResource
             'payment' => $this -> payment,
             'paidAmount' => number_format($this->paidAmount, 2, '.', ''),
             'remainingAmount' => number_format($this->remainingAmount, 2, '.', ''),
+            'description' => $this -> description,
             'products' => $this->products->map(function ($product) {
                 return [
                     'id' => $product->id,

@@ -2,161 +2,116 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\Product;
-use App\Models\Shipment;
-use Illuminate\Http\Request;
-use App\Traits\ManagesModelsTrait;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ShipmentRequest;
-use App\Http\Resources\Admin\ShipmentResource;
 use App\Http\Requests\Admin\UpdatePaidAmountRequest;
-use App\Http\Resources\Admin\ShipmentProductResource;
+use App\Http\Resources\Admin\ShipmentResource;
+use App\Models\Shipment;
+use App\Models\Supplier;
+use App\Services\ShipmentService;
+use App\Traits\ManagesModelsTrait;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ShipmentController extends Controller
 {
     use ManagesModelsTrait;
-    // public function showAll(Request $request)
-    // {
+    
+    public function __construct(private ShipmentService $shipmentService) {}
 
-    //     $this->authorize('showAll',Shipment::class);
+    public function create(ShipmentRequest $request)
+    {
+        $shipment = $this->shipmentService->create($request->validated());
 
-    //     $searchTerm = $request->input('search', '');
-
-    //     $Shipment = Shipment::where('supplierName', 'like', '%' . $searchTerm . '%')
-    //                  ->orderBy('created_at', 'desc')
-    //                  ->paginate(10);
-
-    //     $paidAmount = $Shipment->sum('paidAmount');
-    //     $remainingAmount = $Shipment->sum('remainingAmount');
-
-    //               return response()->json([
-    //                   'data' =>  ShipmentResource::collection($Shipment),
-    //                   'pagination' => [
-    //                     'total' => $Shipment->total(),
-    //                     'count' => $Shipment->count(),
-    //                     'per_page' => $Shipment->perPage(),
-    //                     'current_page' => $Shipment->currentPage(),
-    //                     'total_pages' => $Shipment->lastPage(),
-    //                     'next_page_url' => $Shipment->nextPageUrl(),
-    //                     'prev_page_url' => $Shipment->previousPageUrl()
-    //                 ],
-    //                 'statistics' => [
-    //                 'paid_amount' => number_format($paidAmount, 2, '.', ''),
-    //                 'remaining_amount' => number_format($remainingAmount, 2, '.', ''),
-    //                 ],
-
-    //                   'message' => "Show All Shipment."
-    //               ]);
-    // }
-
-    public function showAll(Request $request)
-{
-    $this->authorize('showAll', Shipment::class);
-
-    $searchTerm = $request->input('search', '');
-    $statusFilter = $request->input('status', '');
-
-    // $query = Shipment::where('supplierName', 'like', '%' . $searchTerm . '%');
-    $query = Shipment::with('supplier')
-    ->when($searchTerm, function ($query) use ($searchTerm) {
-        $query->whereHas('supplier', function ($q) use ($searchTerm) {
-            $q->where('supplierName', 'like', '%' . $searchTerm . '%');
-        });
-    });
-
-  if ($request->filled('status') && in_array($statusFilter, ['pending', 'paid', 'partialReturn', 'return'])) {
-        $query->where('status', $statusFilter);
+        return response()->json([
+            'message' => 'Shipment created successfully',
+            'data' => new ShipmentResource($shipment),
+        ]);
     }
 
-    $shipments = $query->orderBy('created_at', 'desc')
-                      ->paginate(10);
+    public function update(ShipmentRequest $request, $id)
+    {
+        $shipment = Shipment::findOrFail($id);
+        $updated = $this->shipmentService->update($shipment, $request->validated());
 
-    $paidAmount = Shipment::sum('paidAmount');
-    $remainingAmount = Shipment::where('status', 'pending')->sum('remainingAmount');
+        return response()->json([
+            'message' => 'Shipment updated successfully',
+            'data' => new ShipmentResource($updated),
+        ]);
+    }
+
+    public function edit($id)
+    {
+        $shipment = Shipment::with('products.product')->findOrFail($id);
+        $this->shipmentService->calculateTotals($shipment);
+
+        return response()->json([
+            'message' => 'Shipment fetched successfully',
+            'data' => new ShipmentResource($shipment),
+        ]);
+    }
+
+public function showAll(Request $request)
+{
+    $searchTerm = $request->input('search', '');
+    $status = $request->input('status', null);
+    $supplierId = $request->input('supplier_id', null);
+    $fromDate = $request->input('from_date');
+    $toDate = $request->input('to_date');
+
+    $query = Shipment::with('supplier')
+        ->when($searchTerm, function($q) use ($searchTerm) {
+            $q->where(function($sub) use ($searchTerm) {
+                $sub->where('importer', 'like', "%{$searchTerm}%")
+                    ->orWhereHas('supplier', function($supplierQ) use ($searchTerm) {
+                        $supplierQ->where('name', 'like', "%{$searchTerm}%");
+                    });
+            });
+        })
+        ->when($status, fn($q) => $q->where('status', $status))
+        ->when($supplierId, fn($q) => $q->where('supplier_id', $supplierId))
+        ->when($fromDate, fn($q) => $q->whereDate('creationDate', '>=', $fromDate))
+        ->when($toDate, fn($q) => $q->whereDate('creationDate', '<=', $toDate))
+        ->orderBy('created_at', 'desc');
+
+    $shipments = $query->paginate(10);
+
+    // الإحصائيات - نفس الفاتورة بالظبط
+    $paidAmount = (clone $query)->sum('paidAmount');
+    $remainingAmount = (clone $query)->where('status', 'indebted')->sum('remainingAmount');
+    $totalPurchases = (clone $query)->where('status', 'completed')->sum('invoiceAfterDiscount');
 
     return response()->json([
-        'data' => ShipmentResource::collection($shipments),
+        'data' => $shipments->map(function ($shipment) {
+            return [
+                'id' => $shipment->id,
+                'supplier_name' => $shipment->supplier->name,
+                'importer' => $shipment->importer,
+                'invoiceAfterDiscount' => $shipment->invoiceAfterDiscount,
+                'creationDate' => $shipment->creationDate,
+                'remainingAmount' => $shipment->remainingAmount,
+                'status' => $shipment->status,
+            ];
+        }),
         'pagination' => [
             'total' => $shipments->total(),
             'count' => $shipments->count(),
             'per_page' => $shipments->perPage(),
             'current_page' => $shipments->currentPage(),
             'total_pages' => $shipments->lastPage(),
-            'next_page_url' => $shipments->nextPageUrl(),
-            'prev_page_url' => $shipments->previousPageUrl()
         ],
         'statistics' => [
-            'paid_amount' => number_format($paidAmount, 2, '.', ''),
-            'remaining_amount' => number_format($remainingAmount, 2, '.', ''),
+            'paid_amount' => number_format($paidAmount, 2),
+            'remaining_amount' => number_format($remainingAmount, 2),
+            'total_purchases' => number_format($totalPurchases, 2),
         ],
-        'message' => "Show All Shipment."
+        'message' => "Show All Shipments Successfully."
     ]);
 }
-
-
-public function create(ShipmentRequest $request)
-{
-    $this->authorize('create',Shipment::class);
-
-    $formattedTotalPrice = number_format($request->totalPrice, 2, '.', '');
-
-    $Shipment = Shipment::create([
-        "supplier_id" => $request->supplier_id,
-        "importer" => $request->importer,
-        'admin_id' => auth()->id(),
-        'paidAmount' => $request->paidAmount ?? 0,
-        'status' => 'pending',
-        'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d h:i:s'),
-    ]);
-
-    if ($request->has('products')) {
-        foreach ($request->products as $product) {
-            $productModel = Product::find($product['id']);
-
-            if (!$productModel) {
-                return response()->json([
-                    'message' => "Product with ID {$product['id']} not found.",
-                ], 404);
-            }
-
-            $productModel->increment('quantity', $product['quantity']);
-
-            $Shipment->products()->syncWithoutDetaching([
-                $product['id'] => [
-                    'quantity' => $product['quantity'],
-                    'price' => $product['price']
-                ]
-            ]);
-        }
-    }
-
-    $Shipment->updateShipmentProductsCount();
-
-    $Shipment->totalPrice = $Shipment->calculateTotalPrice();
-
-    $remainingAmount = $Shipment->totalPrice - $Shipment->paidAmount;
-    $Shipment->remainingAmount = $remainingAmount;
-
-    if ($Shipment->paidAmount >= $Shipment->totalPrice) {
-        $Shipment->status = 'paid';
-    } else {
-        $Shipment->status = 'pending';
-    }
-
-    $Shipment->save();
-
-    return response()->json([
-        'data' => new ShipmentProductResource($Shipment),
-        'message' => "Shipment Created Successfully.",
-    ]);
-}
-
 
 public function updatePaidAmount(UpdatePaidAmountRequest $request, $id)
 {
-
     $shipment = Shipment::findOrFail($id);
-    $this->authorize('updatePaidAmount',$shipment);
     $paidAmount = $request->paidAmount;
 
     if ($paidAmount > $shipment->remainingAmount) {
@@ -166,159 +121,123 @@ public function updatePaidAmount(UpdatePaidAmountRequest $request, $id)
     }
 
     $shipment->paidAmount += $paidAmount;
-
-    $remainingAmount = $shipment->totalPrice - $shipment->paidAmount;
+    $remainingAmount = $shipment->invoiceAfterDiscount - $shipment->paidAmount;
     $shipment->remainingAmount = $remainingAmount;
 
+    // تحديث الحالة - نفس الفاتورة بالظبط
     if ($remainingAmount <= 0) {
-        $shipment->status = 'paid';
+        $shipment->status = 'completed'; // مدفوع بالكامل
     } else {
-        $shipment->status = 'pending';
+        $shipment->status = 'indebted'; // غير مكتمل الدفع
     }
 
     $shipment->save();
 
     return response()->json([
         'message' => 'تم تحديث المبلغ المدفوع بنجاح.',
-        'data' => new ShipmentProductResource($shipment),
+        'data' => new ShipmentResource($shipment),
     ]);
 }
 
+    public function destroy(string $id)
+    {
+        return $this->destroyModel(Shipment::class, ShipmentResource::class, $id);
+    }
 
-        public function edit(string $id)
-        {
-            $Shipment = Shipment::with('supplier')->find($id);
-
-            if (!$Shipment) {
-                return response()->json([
-                    'message' => "Shipment not found."
-                ], 404);
-            }
-            $this->authorize('edit',$Shipment);
-
-            return response()->json([
-                'data' => new ShipmentProductResource($Shipment),
-                'message' => "Edit Shipment By ID Successfully."
-            ]);
-        }
-
-
-    public function update(ShipmentRequest $request, string $id)
-{
-
-    $Shipment = Shipment::findOrFail($id);
-
-    if (!$Shipment) {
+    public function showDeleted()
+    {
+        $shipments = Shipment::onlyTrashed()->with('supplier')->get();
         return response()->json([
-            'message' => "Shipment not found."
-        ], 404);
-    }
-    $this->authorize('update',$Shipment);
-
-    $Shipment->update([
-        "supplier_id" => $request->supplier_id,
-        "importer" => $request->importer,
-        'admin_id' => auth()->id(),
-        'paidAmount' => $request->paidAmount ?? 0,
-        'status' => 'pending',
-        'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d h:i:s'),
-    ]);
-
-    $previousProducts = $Shipment->products()
-        ->select('products.id', 'shipment_products.quantity')
-        ->pluck('shipment_products.quantity', 'products.id')
-        ->toArray();
-
-    if ($request->has('products')) {
-        $productsData = [];
-        $errors = [];
-
-        foreach ($request->products as $product) {
-            $productModel = Product::find($product['id']);
-            $previousQuantity = $previousProducts[$product['id']] ?? 0;
-            $newQuantity = $product['quantity'];
-
-            if ($newQuantity > $previousQuantity) {
-                $difference = $newQuantity - $previousQuantity;
-                $productModel->increment('quantity', $difference);
-            } elseif ($newQuantity < $previousQuantity) {
-                $difference = $previousQuantity - $newQuantity;
-                if ($productModel->quantity < $difference) {
-                    $errors[] = "Not enough quantity to reduce for product '{$productModel->name}'. Available: {$productModel->quantity}.";
-                    continue;
-                }
-                $productModel->decrement('quantity', $difference);
-            }
-
-            $productsData[$product['id']] = [
-                'quantity' => $newQuantity,
-                'price' => $product['price'],
-            ];
-        }
-
-        if (!empty($errors)) {
-            return response()->json([
-                'message' => 'Some errors occurred while updating the shipment.',
-                'errors' => $errors,
-            ], 400);
-        }
-
-        $Shipment->products()->sync($productsData);
-    }
-
-    $Shipment->updateShipmentProductsCount();
-
-    $Shipment->totalPrice = $Shipment->calculateTotalPrice();
-
-    $remainingAmount = $Shipment->totalPrice - $Shipment->paidAmount;
-    $Shipment->remainingAmount = $remainingAmount;
-
-    if ($Shipment->paidAmount >= $Shipment->totalPrice) {
-        $Shipment->status = 'paid';
-    } else {
-        $Shipment->status = 'pending';
-    }
-    $Shipment->save();
-
-    return response()->json([
-        'data' => new ShipmentProductResource($Shipment->load('products')),
-        'message' => "Update Shipment By Id Successfully.",
-    ]);
-}
-
-
-    public function destroy(string $id){
-
-    return $this->destroyModel(Shipment::class, ShipmentProductResource::class, $id);
-    }
-
-    public function showDeleted(){
-        $this->authorize('manage_users');
-    $Shipments=Shipment::onlyTrashed()->get();
-    return response()->json([
-        'data' =>ShipmentProductResource::collection($Shipments),
-        'message' => "Show Deleted Shipments Successfully."
-    ]);
+            'data' => ShipmentResource::collection($shipments),
+            'message' => "Show Deleted Shipments Successfully."
+        ]);
     }
 
     public function restore(string $id)
     {
-       $this->authorize('manage_users');
-    $Shipment = Shipment::withTrashed()->where('id', $id)->first();
-    if (!$Shipment) {
+        $shipment = Shipment::withTrashed()->where('id', $id)->first();
+        if (!$shipment) {
+            return response()->json(['message' => "Shipment not found."], 404);
+        }
+        $shipment->restore();
         return response()->json([
-            'message' => "Shipment not found."
-        ], 404);
-    }
-    $Shipment->restore();
-    return response()->json([
-        'data' =>new ShipmentProductResource($Shipment),
-        'message' => "Restore Shipment By Id Successfully."
-    ]);
+            'data' => new ShipmentResource($shipment),
+            'message' => "Restore Shipment Successfully."
+        ]);
     }
 
-    public function forceDelete(string $id){
-
+    public function forceDelete(string $id)
+    {
         return $this->forceDeleteModel(Shipment::class, $id);
     }
+
+    public function fullReturn($id)
+{
+    $shipment = Shipment::findOrFail($id);
+
+    $returned = $this->shipmentService->fullReturn($shipment);
+
+    return response()->json([
+        'message' => 'Shipment fully returned',
+        'data' => new ShipmentResource($returned),
+    ]);
 }
+
+public function partialReturn(Request $request, $id)
+{
+    $shipment = Shipment::findOrFail($id);
+
+    $returned = $this->shipmentService->partialReturn($shipment, $request->input('products', []));
+
+    return response()->json([
+        'message' => 'Shipment partially returned',
+        'data' => new ShipmentResource($returned),
+    ]);
+}
+}
+
+//     public function showAll(Request $request)
+// {
+//     $this->authorize('showAll', Shipment::class);
+
+//     $searchTerm = $request->input('search', '');
+//     $statusFilter = $request->input('status', '');
+
+//     // $query = Shipment::where('supplierName', 'like', '%' . $searchTerm . '%');
+//     $query = Shipment::with('supplier')
+//     ->when($searchTerm, function ($query) use ($searchTerm) {
+//         $query->whereHas('supplier', function ($q) use ($searchTerm) {
+//             $q->where('supplierName', 'like', '%' . $searchTerm . '%');
+//         });
+//     });
+
+//   if ($request->filled('status') && in_array($statusFilter, ['pending', 'paid', 'partialReturn', 'return'])) {
+//         $query->where('status', $statusFilter);
+//     }
+
+//     $shipments = $query->orderBy('created_at', 'desc')
+//                       ->paginate(10);
+
+//     $paidAmount = Shipment::sum('paidAmount');
+//     $remainingAmount = Shipment::where('status', 'pending')->sum('remainingAmount');
+
+//     return response()->json([
+//         'data' => ShipmentResource::collection($shipments),
+//         'pagination' => [
+//             'total' => $shipments->total(),
+//             'count' => $shipments->count(),
+//             'per_page' => $shipments->perPage(),
+//             'current_page' => $shipments->currentPage(),
+//             'total_pages' => $shipments->lastPage(),
+//             'next_page_url' => $shipments->nextPageUrl(),
+//             'prev_page_url' => $shipments->previousPageUrl()
+//         ],
+//         'statistics' => [
+//             'paid_amount' => number_format($paidAmount, 2, '.', ''),
+//             'remaining_amount' => number_format($remainingAmount, 2, '.', ''),
+//         ],
+//         'message' => "Show All Shipment."
+//     ]);
+// }
+
+

@@ -39,6 +39,11 @@ class Invoice extends Model
                     ->withPivot('quantity', 'total','profit','shipment_id','returnReason');
     }
 
+    public function admin()
+{
+    return $this->belongsTo(Admin::class);
+}
+
     protected static function booted()
 {
 

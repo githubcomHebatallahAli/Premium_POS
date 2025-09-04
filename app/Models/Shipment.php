@@ -28,6 +28,7 @@ class Shipment extends Model
         'totalAfterDiscount',
         'payment',
         'returnReason',
+        'description',
     ];
 
 
@@ -103,9 +104,9 @@ public function supplier()
     return $this->belongsTo(Supplier::class);
 }
 
-
-
-
-
+public function admin()
+{
+    return $this->belongsTo(Admin::class);
+}
 
 }
