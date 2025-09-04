@@ -18,9 +18,9 @@ public function create(array $data): Shipment
             'importer' => $data['importer'] ?? null,
             'admin_id' => auth()->id(),
             'discount' => $data['discount'] ?? 0,
-            'discountType' => $data['discountType'] ?? 'percentage',
+            'discountType' => isset($data['discountType']) ? $data['discountType'] : null,
             'extraAmount' => $data['extraAmount'] ?? 0,
-            'taxType' => $data['taxType'] ?? 'percentage',
+            'taxType' => isset($data['taxType']) ? $data['taxType'] : null,
             'paidAmount' => $data['paidAmount'] ?? 0,
             'creationDate' => now(),
             'payment' => $data['payment'] ?? 'cash',
@@ -118,19 +118,25 @@ public function create(array $data): Shipment
 public function calculateTotals(Shipment $shipment, float $total): void
 {
     $discount = $shipment->discount ?? 0;
+    
+    // إذا discountType هو percentage نحسب النسبة
     if ($shipment->discountType === 'percentage') {
         $discount = ($total * $discount) / 100;
     }
+    // إذا كان null أو pounds، نستخدم القيمة كما هي
 
     $extra = $shipment->extraAmount ?? 0;
+    
+    // إذا taxType هو percentage نحسب النسبة
     if ($shipment->taxType === 'percentage') {
         $extra = ($total * $extra) / 100;
     }
+    // إذا كان null أو pounds، نستخدم القيمة كما هي
 
     $final = $total - $discount + $extra;
     $remaining = $final - ($shipment->paidAmount ?? 0);
 
-    // تحديد الحالة - نفس الفاتورة بالظبط
+    // تحديد الحالة
     if ($remaining <= 0) {
         $status = 'completed'; // مدفوع بالكامل
     } else {
@@ -139,7 +145,7 @@ public function calculateTotals(Shipment $shipment, float $total): void
 
     $shipment->update([
         'totalPrice' => $total,
-        'invoiceAfterDiscount' => $final,
+        'totalAfterDiscount' => $final,
         'remainingAmount' => $remaining > 0 ? $remaining : 0,
         'status' => $status
     ]);
