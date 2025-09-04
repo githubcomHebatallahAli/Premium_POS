@@ -19,6 +19,7 @@ return new class extends Migration
             $table->integer('quantity');
             $table->decimal('total', 15, 2)->default(0);
             $table->decimal('profit', 10, 2)->nullable();
+            $table->text('returnReason')->nullable();
             $table->timestamps();
         });
     }

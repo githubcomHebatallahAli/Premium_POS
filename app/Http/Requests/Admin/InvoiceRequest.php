@@ -30,6 +30,7 @@ class InvoiceRequest extends FormRequest
             // 'sellerName' => 'required|string',
             'admin_id' =>'nullable|exists:admins,id',
             'status'=> 'nullable|in:completed,return,indebted,partialReturn',
+            'returnReason'=> 'nullable|string',
             'payment'=> 'nullable|in:visa,cash,wallet,instapay',
             'pullType' => 'required|in:fifo,manual', 
             'discount' => 'nullable|numeric|min:0',
@@ -41,6 +42,8 @@ class InvoiceRequest extends FormRequest
             'products.*.id' => 'required|exists:products,id',
             "products.*.shipment_id" => "required_if:pullType,manual|exists:shipment_products,shipment_id",
             'products.*.quantity' => 'required|integer|min:1',
+            'products.*.returnReason' => 'nullable|string',
+
             // 'discount' => 'nullable|numeric|min:0',
         ];
     }

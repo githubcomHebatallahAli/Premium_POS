@@ -14,7 +14,8 @@ class InvoiceProduct extends Model
         'shipment_id',
         'quantity',
         'total',
-        'profit'
+        'profit',
+        'returnReason'
     ];
 
     

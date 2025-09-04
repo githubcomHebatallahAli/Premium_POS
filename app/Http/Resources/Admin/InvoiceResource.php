@@ -27,6 +27,7 @@ class InvoiceResource extends JsonResource
             'pullType' => $this->pullType,
             'discountType' => $this->discountType,
             'taxType' => $this->taxType,
+            'returnReason' => $this->returnReason,
 
             // ✅ المبالغ المالية
             'totalInvoicePrice'   => number_format($this->totalInvoicePrice, 2, '.', ''),
@@ -48,6 +49,7 @@ class InvoiceResource extends JsonResource
                     'quantity' => $product->pivot->quantity,
                     'total' => $product->pivot->total,
                     'shipment_id' => $product->pivot->shipment_id,
+                    'returnReason' => $product->pivot->returnReason,
                     // 'profit' => $product->pivot->profit
                 ];
             }),

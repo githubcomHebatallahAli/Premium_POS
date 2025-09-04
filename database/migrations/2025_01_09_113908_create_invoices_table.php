@@ -29,6 +29,7 @@ return new class extends Migration
             $table->decimal('remainingAmount', 10, 2)->nullable();
             $table->enum('pullType', ['fifo', 'manual'])->default('fifo');
             $table->enum('status', ['completed','return','partialReturn','indebted'])->nullable();
+            $table->text('returnReason')->nullable();
             $table->enum('payment', ['visa','cash','wallet','instapay'])->nullable();
             $table->softDeletes();
             $table->timestamps();

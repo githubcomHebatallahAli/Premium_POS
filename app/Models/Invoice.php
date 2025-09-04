@@ -27,13 +27,16 @@ class Invoice extends Model
         'payment',
         'pullType',
         'paidAmount',
-        'remainingAmount', 
+        'remainingAmount',
+        'discountType',
+        'taxType',
+        'returnReason' 
     ];
 
     public function products()
     {
         return $this->belongsToMany(Product::class, 'invoice_products')
-                    ->withPivot('quantity', 'total','profit','shipment_id');
+                    ->withPivot('quantity', 'total','profit','shipment_id','returnReason');
     }
 
     protected static function booted()
