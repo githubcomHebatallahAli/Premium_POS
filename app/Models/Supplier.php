@@ -17,7 +17,8 @@ class Supplier extends Model
         'shipmentsCount',
         'status',
         'companyName',
-        'description'
+        'description',
+        'creationDate',
     ];
 
     public function shipment()

@@ -21,6 +21,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->unsignedBigInteger('shipmentsCount')->default(0);
             $table->enum('status', ['active', 'notActive'])->default('active');
+            $table->timestamp('creationDate')->nullable();
             $table->softDeletes();
             $table->timestamps();
         });
