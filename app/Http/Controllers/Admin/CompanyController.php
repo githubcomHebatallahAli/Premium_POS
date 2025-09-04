@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\CompanyRequest;
 use App\Http\Resources\Admin\CompanyResource;
 use App\Models\Company;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class CompanyController extends Controller
 {
@@ -29,10 +30,14 @@ class CompanyController extends Controller
            $Company =Company::create ([
                 "name" => $request->name,
                 'address' => $request->address,
-                'logo' => $request->logo,
                 'firstPhone' => $request->firstPhone,
                 'secondPhone' => $request->secondPhone,
             ]);
+               if ($request->hasFile('logo')) {
+                $logoPath = $request->file('logo')->store(Company::storageFolder);
+                $Company->logo = $logoPath;
+            }
+              $Company->save();
 
            return response()->json([
             'data' =>new CompanyResource($Company),
@@ -73,10 +78,16 @@ class CompanyController extends Controller
            $Company->update([
             "name" => $request->name,
             'address' => $request->address,
-            'logo' => $request->logo,
             'firstPhone' => $request->firstPhone,
             'secondPhone' => $request->secondPhone,
             ]);
+                 if ($request->hasFile('logo')) {
+                if ($Company->logo) {
+                    Storage::disk('public')->delete( $Company->logo);
+                }
+                $logoPath = $request->file('logo')->store('Products', 'public');
+                 $Company->logo = $logoPath;
+            }
 
            $Company->save();
            return response()->json([
