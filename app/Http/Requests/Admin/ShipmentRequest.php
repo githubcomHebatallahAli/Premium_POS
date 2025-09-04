@@ -30,7 +30,7 @@ class ShipmentRequest extends FormRequest
             'admin_id' =>'nullable|exists:admins,id',
              'creationDate'=> 'nullable|date_format:Y-m-d H:i:s',
              'paidAmount' => 'required|numeric|min:0',
-             'status'=> 'nullable|in:pending,paid,partialReturn,return',
+             'status'=> 'nullable|in:completed,indebted,partialReturn,return',
              'returnReason'=> 'nullable|string',
             'discount' => 'nullable|numeric|min:0',
             'extraAmount' => 'nullable|numeric|min:0',

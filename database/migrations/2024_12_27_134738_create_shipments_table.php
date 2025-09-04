@@ -25,7 +25,7 @@ return new class extends Migration
             $table->decimal('invoiceAfterDiscount', 15, 2)->nullable();
             $table->decimal('paidAmount', 10, 2);
             $table->decimal('remainingAmount', 10, 2)->nullable();
-            $table->enum('status', ['pending', 'paid','partialReturn','return'])->default('pending');
+            $table->enum('status', ['indebted', 'completed','partialReturn','return'])->default('indebted');
             $table->text('returnReason')->nullable();
             $table->enum('payment', ['visa','cash','wallet','instapay'])->nullable();
             $table->timestamp('creationDate')->nullable();
