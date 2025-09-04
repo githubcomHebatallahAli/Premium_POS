@@ -19,7 +19,7 @@ class ProductResource extends JsonResource
         return [
             "id" => $this -> id,
             "name" => $this -> name ,
-            'quantity'=>$this->quantity,
+            // 'quantity'=>$this->quantity,
             // 'priceBeforeDiscount'=>$this->priceBeforeDiscount,
             // 'discount' => $this->discount ? number_format($this->discount, 2) . '%' : null,
             "sellingPrice" => $this -> sellingPrice,

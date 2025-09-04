@@ -130,7 +130,7 @@ $this->authorize('manage_users');
     {
         $this->authorize('manage_users');
         // $this->authorize('create',Product::class);
-        // $this->authorize('create',Product::class);
+        
         $formattedPriceBeforeDiscount = number_format($request->priceBeforeDiscount, 2, '.', '');
         $formattedSellingPrice = number_format($request->sellingPrice, 2, '.', '');
         // $formattedPurchesPrice = number_format($request->purchesPrice, 2, '.', '');
