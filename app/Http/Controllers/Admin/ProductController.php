@@ -50,6 +50,7 @@ class ProductController extends Controller
         public function showAll(Request $request)
     {
         // $this->authorize('showAll',Product::class);
+          $this->authorize('manage_users');
       
         $Product = Product::with(['category','brand']);
         
@@ -99,6 +100,7 @@ class ProductController extends Controller
 
     public function showAllProduct()
     {
+          $this->authorize('manage_users');
         // $this->authorize('showAllProduct',Product::class);
 
         $Product = Product::with(['category','brand'])->get();
@@ -112,7 +114,7 @@ class ProductController extends Controller
     public function showProductLessThan5()
 {
     // $this->authorize('showProductLessThan5', Product::class);
-
+$this->authorize('manage_users');
     $products = Product::with(['category', 'brand'])
                         ->where('quantity', '<=', 5)
                         ->get();
@@ -126,6 +128,7 @@ class ProductController extends Controller
 
     public function create(ProductRequest $request)
     {
+        $this->authorize('manage_users');
         // $this->authorize('create',Product::class);
         $formattedPriceBeforeDiscount = number_format($request->priceBeforeDiscount, 2, '.', '');
         $formattedSellingPrice = number_format($request->sellingPrice, 2, '.', '');
@@ -172,6 +175,7 @@ class ProductController extends Controller
 
         public function edit(string $id)
         {
+            $this->authorize('manage_users');
             $Product = Product::with(['category','brand'])->find($id);
 
             if (!$Product) {
@@ -190,6 +194,7 @@ class ProductController extends Controller
 
         public function update(ProductRequest $request, string $id)
         {
+            $this->authorize('manage_users');
             // $formattedPriceBeforeDiscount = number_format($request->priceBeforeDiscount, 2, '.', '');
             $formattedSellingPrice = number_format($request->sellingPrice, 2, '.', '');
             // $formattedPurchesPrice = number_format($request->purchesPrice, 2, '.', '');
