@@ -18,8 +18,8 @@ class CategoryProductResource extends JsonResource
             "id" => $this -> id,
             'name' => $this -> name,
             'productsCount' => $this->productsCount,
-            'image' => $this -> image,
-            'status' => $this -> status,
+            // 'image' => $this -> image,
+            // 'status' => $this -> status,
             'products' => $this->products->map(function ($product) {
                 return [
                     'image' => $product->image,

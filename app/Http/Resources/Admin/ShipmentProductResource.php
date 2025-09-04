@@ -20,7 +20,6 @@ class ShipmentProductResource extends JsonResource
             'supplierName' => $this->supplier->supplierName,
             'importer' => $this -> importer ,
             'admin' => new AdminRegisterResource($this->admin),
-            // 'place' => $this -> place,
             'place' => $this ->supplier->place,
             "totalPrice" => number_format($this->totalPrice, 2, '.', ''),
             'discount'            => number_format($this->discount ?? 0, 2, '.', ''),
@@ -31,6 +30,7 @@ class ShipmentProductResource extends JsonResource
             'shipmentProductsCount' => $this -> shipmentProductsCount,
             'creationDate' => $this -> creationDate,
             'status' => $this -> status,
+            'returnReason' => $this -> returnReason,
             'payment' => $this -> payment,
             'paidAmount' => number_format($this->paidAmount, 2, '.', ''),
             'remainingAmount' => number_format($this->remainingAmount, 2, '.', ''),
@@ -41,6 +41,7 @@ class ShipmentProductResource extends JsonResource
                     'quantity' => $product->pivot->quantity,
                     'price' => $product->pivot->price,
                     'unitPrice' => $product->pivot->unitPrice,
+                    'returnReason' => $product->pivot->returnReason,
                 ];
             }),
 

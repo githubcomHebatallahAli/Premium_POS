@@ -27,6 +27,7 @@ class Shipment extends Model
         'taxType',
         'totalAfterDiscount',
         'payment',
+        'returnReason',
     ];
 
 
@@ -42,7 +43,7 @@ class Shipment extends Model
     public function products()
     {
         return $this->belongsToMany(Product::class, 'shipment_products')
-            ->withPivot('quantity', 'price','unitPrice');
+            ->withPivot('quantity', 'price','unitPrice', 'returnReason');
     }
 
 

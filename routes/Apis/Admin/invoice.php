@@ -17,6 +17,7 @@ Route::controller(InvoiceController::class)->prefix('/admin')->middleware('admin
 Route::get('/restore/invoice/{id}','restore');
 Route::delete('/forceDelete/invoice/{id}','forceDelete');
 Route::put('/invoice/{id}/update-paid','updatePaidAmount');
-Route::post('/invoices/{id}/partial-return','partialReturn');
+Route::put('/invoice/{id}/full-return','fullReturn');
+Route::post('/invoice/{id}/partial-return','partialReturn');
 
    });

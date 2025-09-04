@@ -101,7 +101,6 @@ public function create(ShipmentRequest $request)
     $formattedTotalPrice = number_format($request->totalPrice, 2, '.', '');
 
     $Shipment = Shipment::create([
-        // "supplierName" => $request->supplierName,
         "supplier_id" => $request->supplier_id,
         "importer" => $request->importer,
         'admin_id' => auth()->id(),
@@ -219,7 +218,6 @@ public function updatePaidAmount(UpdatePaidAmountRequest $request, $id)
     $Shipment->update([
         "supplier_id" => $request->supplier_id,
         "importer" => $request->importer,
-        // "place" => $request->place,
         'admin_id' => auth()->id(),
         'paidAmount' => $request->paidAmount ?? 0,
         'status' => 'pending',

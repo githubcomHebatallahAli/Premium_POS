@@ -31,6 +31,7 @@ class ShipmentRequest extends FormRequest
              'creationDate'=> 'nullable|date_format:Y-m-d H:i:s',
              'paidAmount' => 'required|numeric|min:0',
              'status'=> 'nullable|in:pending,paid,partialReturn,return',
+             'returnReason'=> 'nullable|string',
             'discount' => 'nullable|numeric|min:0',
             'extraAmount' => 'nullable|numeric|min:0',
             'discountType' => 'nullable|in:pounds,percentage',
@@ -41,6 +42,7 @@ class ShipmentRequest extends FormRequest
             'products.*.quantity' => 'required|integer|min:1',
             'products.*.price' => 'nullable|numeric|min:0',
             'products.*.unitPrice' => 'nullable|numeric|min:0',
+            'products.*.returnReason' => 'nullable|string',
         ];
     }
 

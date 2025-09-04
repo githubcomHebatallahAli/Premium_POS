@@ -51,7 +51,7 @@ class Product extends Model
     public function shipments()
     {
         return $this->belongsToMany(Shipment::class, 'shipment_products')
-        ->withPivot('quantity', 'price','unitPrice');
+        ->withPivot('quantity', 'price','unitPrice', 'returnReason');
     }
 
     public function invoices()
