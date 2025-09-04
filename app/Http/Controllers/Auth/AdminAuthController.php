@@ -146,17 +146,40 @@ class AdminAuthController extends Controller
     }
 
 
+    // protected function createNewToken($token)
+    // {
+    //     $admin = auth()->guard('admin')->user();
+    //     $admin->last_login_at = Carbon::parse($admin->last_login_at)
+    //     ->timezone('Africa/Cairo')->format('Y-m-d H:i:s');
+    //     $admin = Admin::with('role:id,name')->find(auth()->guard('admin')->id());
+    //     return response()->json([
+    //         'access_token' => $token,
+    //         'token_type' => 'bearer',
+    //         'expires_in' => auth()->guard('admin')->factory()->getTTL() * 60,
+    //         'admin' => $admin,
+    //     ]);
+    // }
+
     protected function createNewToken($token)
-    {
-        $admin = auth()->guard('admin')->user();
-        $admin->last_login_at = Carbon::parse($admin->last_login_at)
-        ->timezone('Africa/Cairo')->format('Y-m-d H:i:s');
-        $admin = Admin::with('role:id,name')->find(auth()->guard('admin')->id());
-        return response()->json([
-            'access_token' => $token,
-            'token_type' => 'bearer',
-            'expires_in' => auth()->guard('admin')->factory()->getTTL() * 60,
-            'admin' => $admin,
-        ]);
+{
+    $admin = auth()->guard('admin')->user();
+    
+    if (!$admin) {
+        return response()->json(['error' => 'لم يتم المصادقة'], 401);
     }
+    
+    // تنسيق الوقت فقط إذا كان موجوداً
+    if ($admin->last_login_at) {
+        $admin->last_login_at = Carbon::parse($admin->last_login_at)
+            ->timezone('Africa/Cairo')
+            ->format('Y-m-d H:i:s');
+    }
+    
+    return response()->json([
+        'access_token' => $token,
+        'token_type' => 'bearer',
+        'expires_in' => auth()->guard('admin')->factory()->getTTL() * 60,
+        'admin' => $admin,
+    ]);
+}
 }
