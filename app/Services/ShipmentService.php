@@ -2,10 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\Product;
 use App\Models\Shipment;
 use App\Models\ShipmentProduct;
-use App\Models\Product;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ShipmentService
 {
@@ -23,7 +24,7 @@ public function create(array $data): Shipment
             'taxType' => isset($data['taxType']) ? $data['taxType'] : null,
             'paidAmount' => $data['paidAmount'] ?? 0,
             'creationDate' => now(),
-            'payment' => isset($data['payment']) ? $data['payment'] : null, // null إذا متكتبش
+            'payment' => isset($data['payment']) ? $data['payment'] : null,
         ]);
 
         $total = 0;
@@ -40,16 +41,13 @@ public function create(array $data): Shipment
             // سعر القطعة الواحدة
             $unitPrice = $productData['unitPrice'] ?? $product->purchasePrice;
             
-            // إذا unitPrice فاضي نستخدم سعر الشراء الحالي
             if (empty($unitPrice)) {
                 $unitPrice = $product->purchasePrice;
             }
 
-            // السعر الإجمالي للكمية
             $totalPrice = $productData['quantity'] * $unitPrice;
 
-            // إنشاء منتج الشحنة
-            $shipmentProduct = ShipmentProduct::create([
+            ShipmentProduct::create([
                 'shipment_id' => $shipment->id,
                 'product_id' => $product->id,
                 'quantity' => $productData['quantity'],
@@ -57,7 +55,6 @@ public function create(array $data): Shipment
                 'price' => $totalPrice,
             ]);
 
-            // تحديث أسعار المنتج
             $product->update([
                 'purchasePrice' => $unitPrice,
                 'sellingPrice' => $unitPrice * 1.2
@@ -66,10 +63,15 @@ public function create(array $data): Shipment
             $total += $totalPrice;
         }
 
-        // حساب الإجماليات النهائية - تأكد من أن الدالة بتشتغل
+        // Debug: تأكد من أن الـ total صحيح
+        Log::info("Total calculated: " . $total);
+
+        // حساب الإجماليات - نمرر الـ total للدالة
         $this->calculateTotals($shipment, $total);
 
-        // تحديث عدد المنتجات
+        // تحديث الـ totalPrice مباشرة
+        $shipment->update(['totalPrice' => $total]);
+
         $shipment->updateShipmentProductsCount();
 
         return $shipment->fresh(['products', 'supplier']);
@@ -78,45 +80,50 @@ public function create(array $data): Shipment
 
 public function calculateTotals(Shipment $shipment, float $total): void
 {
-    // تأكد من أن القيم ليست null
-    $discount = $shipment->discount ?? 0;
-    $extra = $shipment->extraAmount ?? 0;
+    // Debug: تأكد من أن الدالة بتتنفذ
+    Log::info("calculateTotals called with total: " . $total);
 
-    // إذا discountType هو percentage نحسب النسبة
-    if ($shipment->discountType === 'percentage' && $discount > 0) {
-        $discountAmount = ($total * $discount) / 100;
-    } else {
-        $discountAmount = $discount;
+    $discountAmount = 0;
+    $extraAmount = 0;
+
+    // حساب الخصم
+    if ($shipment->discount > 0) {
+        if ($shipment->discountType === 'percentage') {
+            $discountAmount = ($total * $shipment->discount) / 100;
+        } else {
+            $discountAmount = $shipment->discount;
+        }
     }
 
-    // إذا taxType هو percentage نحسب النسبة
-    if ($shipment->taxType === 'percentage' && $extra > 0) {
-        $extraAmount = ($total * $extra) / 100;
-    } else {
-        $extraAmount = $extra;
+    // حساب الضريبة
+    if ($shipment->extraAmount > 0) {
+        if ($shipment->taxType === 'percentage') {
+            $extraAmount = ($total * $shipment->extraAmount) / 100;
+        } else {
+            $extraAmount = $shipment->extraAmount;
+        }
     }
 
-    // حساب الإجمالي النهائي
     $final = $total - $discountAmount + $extraAmount;
     
+    // Debug: تأكد من الحسابات
+    Log::info("Final calculation: " . $total . " - " . $discountAmount . " + " . $extraAmount . " = " . $final);
+
     $remaining = $final - ($shipment->paidAmount ?? 0);
 
-    // تحديد الحالة
-    if ($remaining <= 0) {
-        $status = 'completed';
-    } else {
-        $status = 'indebted';
-    }
+    $status = $remaining <= 0 ? 'completed' : 'indebted';
 
     $shipment->update([
-        'totalPrice' => $total,
         'invoiceAfterDiscount' => $final,
         'remainingAmount' => $remaining > 0 ? $remaining : 0,
         'status' => $status
     ]);
 
-    $shipment->updateShipmentProductsCount();
+    // Debug: تأكد من التحديث
+    Log::info("Shipment updated with invoiceAfterDiscount: " . $final);
 }
+
+
 
     public function update(Shipment $shipment, array $data): Shipment
     {
