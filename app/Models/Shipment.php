@@ -25,7 +25,7 @@ class Shipment extends Model
         'extraAmount',
         'discountType',
         'taxType',
-        'totalAfterDiscount',
+        'invoiceAfterDiscount',
         'payment',
         'returnReason',
         'description',
