@@ -24,12 +24,12 @@ class CategoryProductResource extends JsonResource
                 return [
                     'image' => $product->image,
                     'name' => $product->name,
-                    'priceBeforeDiscount'=>$product->priceBeforeDiscount,
-                    'discount' => $product->discount ? number_format($product->discount, 2) . '%' : null,
+                    // 'priceBeforeDiscount'=>$product->priceBeforeDiscount,
+                    // 'discount' => $product->discount ? number_format($product->discount, 2) . '%' : null,
                     'sellingPrice' => $product->sellingPrice,
-                    'quantity'=>$product->quantity,
-                    "purchesPrice" => $product -> purchesPrice,
-                    "profit" => $product -> profit,
+                    // 'quantity'=>$product->quantity,
+                    // "purchesPrice" => $product -> purchesPrice,
+                    // "profit" => $product -> profit,
                 ];
             }),
         ];
