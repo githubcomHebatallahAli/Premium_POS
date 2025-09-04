@@ -44,7 +44,7 @@ public function create(array $data): Shipment
                 'product_id' => $product->id,
                 'quantity' => $productData['quantity'],
                 'unitPrice' => $productData['unitPrice'],
-                'totalPrice' => $productData['quantity'] * $productData['unitPrice'],
+                'price' => $productData['quantity'] * $productData['unitPrice'], // total price
             ]);
 
             // تحديث أسعار المنتج
@@ -53,13 +53,17 @@ public function create(array $data): Shipment
                 'sellingPrice' => $productData['unitPrice'] * 1.2 // هامش ربح 20%
             ]);
 
-            $total += $shipmentProduct->totalPrice;
+            $total += $shipmentProduct->price;
         }
 
         // حساب الإجماليات النهائية
         $this->calculateTotals($shipment, $total);
 
-        return $shipment->fresh(['products.product', 'supplier']);
+        // تحديث عدد المنتجات
+        $shipment->updateShipmentProductsCount();
+
+        // إرجاع الشحنة مع العلاقات الصحيحة
+        return $shipment->fresh(['products', 'supplier']);
     });
 }
 

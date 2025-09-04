@@ -40,16 +40,16 @@ class ShipmentController extends Controller
         ]);
     }
 
-    public function edit($id)
-    {
-        $shipment = Shipment::with('products.product')->findOrFail($id);
-        $this->shipmentService->calculateTotals($shipment);
+public function edit($id)
+{
+    $shipment = Shipment::with(['products', 'supplier'])->findOrFail($id);
+    $this->shipmentService->calculateTotals($shipment);
 
-        return response()->json([
-            'message' => 'Shipment fetched successfully',
-            'data' => new ShipmentResource($shipment),
-        ]);
-    }
+    return response()->json([
+        'message' => 'Shipment fetched successfully',
+        'data' => new ShipmentResource($shipment),
+    ]);
+}
 
 public function showAll(Request $request)
 {
