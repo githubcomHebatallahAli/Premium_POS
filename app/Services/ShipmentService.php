@@ -23,7 +23,7 @@ public function create(array $data): Shipment
             'taxType' => isset($data['taxType']) ? $data['taxType'] : null,
             'paidAmount' => $data['paidAmount'] ?? 0,
             'creationDate' => now(),
-            'payment' => $data['payment'] ?? 'cash',
+            'payment' => isset($data['payment']) ? $data['payment'] : null, // null إذا متكتبش
         ]);
 
         $total = 0;
@@ -53,20 +53,20 @@ public function create(array $data): Shipment
                 'shipment_id' => $shipment->id,
                 'product_id' => $product->id,
                 'quantity' => $productData['quantity'],
-                'unitPrice' => $unitPrice, // سعر القطعة
-                'price' => $totalPrice,    // السعر الإجمالي للكمية
+                'unitPrice' => $unitPrice,
+                'price' => $totalPrice,
             ]);
 
             // تحديث أسعار المنتج
             $product->update([
                 'purchasePrice' => $unitPrice,
-                'sellingPrice' => $unitPrice * 1.2 // هامش ربح 20%
+                'sellingPrice' => $unitPrice * 1.2
             ]);
 
             $total += $totalPrice;
         }
 
-        // حساب الإجماليات النهائية
+        // حساب الإجماليات النهائية - تأكد من أن الدالة بتشتغل
         $this->calculateTotals($shipment, $total);
 
         // تحديث عدد المنتجات
@@ -74,6 +74,48 @@ public function create(array $data): Shipment
 
         return $shipment->fresh(['products', 'supplier']);
     });
+}
+
+public function calculateTotals(Shipment $shipment, float $total): void
+{
+    // تأكد من أن القيم ليست null
+    $discount = $shipment->discount ?? 0;
+    $extra = $shipment->extraAmount ?? 0;
+
+    // إذا discountType هو percentage نحسب النسبة
+    if ($shipment->discountType === 'percentage' && $discount > 0) {
+        $discountAmount = ($total * $discount) / 100;
+    } else {
+        $discountAmount = $discount;
+    }
+
+    // إذا taxType هو percentage نحسب النسبة
+    if ($shipment->taxType === 'percentage' && $extra > 0) {
+        $extraAmount = ($total * $extra) / 100;
+    } else {
+        $extraAmount = $extra;
+    }
+
+    // حساب الإجمالي النهائي
+    $final = $total - $discountAmount + $extraAmount;
+    
+    $remaining = $final - ($shipment->paidAmount ?? 0);
+
+    // تحديد الحالة
+    if ($remaining <= 0) {
+        $status = 'completed';
+    } else {
+        $status = 'indebted';
+    }
+
+    $shipment->update([
+        'totalPrice' => $total,
+        'invoiceAfterDiscount' => $final,
+        'remainingAmount' => $remaining > 0 ? $remaining : 0,
+        'status' => $status
+    ]);
+
+    $shipment->updateShipmentProductsCount();
 }
 
     public function update(Shipment $shipment, array $data): Shipment
@@ -114,50 +156,7 @@ public function create(array $data): Shipment
             return $shipment->fresh(['products', 'supplier']);
         });
     }
-public function calculateTotals(Shipment $shipment, float $total): void
-{
-    $discount = 0;
-    $extra = 0;
 
-    // حساب الخصم إذا كان موجود
-    if ($shipment->discount > 0) {
-        if ($shipment->discountType === 'percentage') {
-            $discount = ($total * $shipment->discount) / 100;
-        } else {
-            $discount = $shipment->discount;
-        }
-    }
-
-    // حساب الضريبة إذا كانت موجودة
-    if ($shipment->extraAmount > 0) {
-        if ($shipment->taxType === 'percentage') {
-            $extra = ($total * $shipment->extraAmount) / 100;
-        } else {
-            $extra = $shipment->extraAmount;
-        }
-    }
-
-    // حساب الإجمالي النهائي
-    $final = $total - $discount + $extra;
-    
-    $remaining = $final - ($shipment->paidAmount ?? 0);
-
-    // تحديد الحالة
-    if ($remaining <= 0) {
-        $status = 'completed';
-    } else {
-        $status = 'indebted';
-    }
-
-    $shipment->update([
-        'totalPrice' => $total,
-        'invoiceAfterDiscount' => $final, // هنا التغيير
-        'remainingAmount' => $remaining > 0 ? $remaining : 0,
-        'status' => $status
-    ]);
-
-    $shipment->updateShipmentProductsCount();
-}
 
 public function fullReturn(Shipment $shipment): Shipment
 {
