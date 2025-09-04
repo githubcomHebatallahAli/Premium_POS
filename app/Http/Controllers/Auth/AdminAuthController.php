@@ -130,10 +130,10 @@ class AdminAuthController extends Controller
 
 
 
-    public function refresh()
-    {
-        return $this->createNewToken(auth()->guard('admin')->refresh());
-    }
+    // public function refresh()
+    // {
+    //     return $this->createNewToken(auth()->guard('admin')->refresh());
+    // }
 
 
 
@@ -160,26 +160,76 @@ class AdminAuthController extends Controller
     //     ]);
     // }
 
-    protected function createNewToken($token)
+public function refresh()
 {
+    try {
+        // 1. أولاً نحاول تجديد التوكن
+        $newToken = auth()->guard('admin')->refresh();
+        
+        // 2. بعد نجاح التجديد، نأخذ المستخدم من التوكن الجديد
+        auth()->guard('admin')->setToken($newToken);
+        
+        // 3. الآن يمكننا جلب بيانات المستخدم بأمان
+        return $this->createNewToken($newToken);
+        
+    } catch (\Tymon\JWTAuth\Exceptions\TokenExpiredException $e) {
+        // التوكن انتهت صلاحيته
+        return response()->json([
+            'error' => 'انتهت صلاحية الجلسة',
+            'message' => 'يجب تسجيل الدخول مرة أخرى'
+        ], 401);
+        
+    } catch (\Tymon\JWTAuth\Exceptions\TokenInvalidException $e) {
+        // التوكن غير صالح
+        return response()->json([
+            'error' => 'جلسة غير صالحة',
+            'message' => 'التوكن المقدم غير صحيح'
+        ], 401);
+        
+    } catch (\Tymon\JWTAuth\Exceptions\JWTException $e) {
+        // أي خطأ آخر في JWT
+        return response()->json([
+            'error' => 'خطأ في المصادقة',
+            'message' => 'يجب تسجيل الدخول أولاً'
+        ], 401);
+    }
+}
+
+protected function createNewToken($token)
+{
+    // الآن المستخدم متوفر لأننا حددنا التوكن الجديد
     $admin = auth()->guard('admin')->user();
     
     if (!$admin) {
-        return response()->json(['error' => 'لم يتم المصادقة'], 401);
+        return response()->json([
+            'error' => 'المستخدم غير موجود',
+            'message' => 'لم يتم العثور على المسؤول'
+        ], 404);
     }
     
-    // تنسيق الوقت فقط إذا كان موجوداً
+    // تنسيق وقت آخر دخول إذا كان موجوداً
+    $formattedLastLogin = null;
     if ($admin->last_login_at) {
-        $admin->last_login_at = Carbon::parse($admin->last_login_at)
+        $formattedLastLogin = Carbon::parse($admin->last_login_at)
             ->timezone('Africa/Cairo')
             ->format('Y-m-d H:i:s');
     }
     
+    // جلب البيانات الحديثة مع الدور
+    $adminWithRole = Admin::with('role:id,name')->find($admin->id);
+    
+    // إرجاع البيانات
     return response()->json([
         'access_token' => $token,
         'token_type' => 'bearer',
         'expires_in' => auth()->guard('admin')->factory()->getTTL() * 60,
-        'admin' => $admin,
+        'admin' => [
+            'id' => $adminWithRole->id,
+            'name' => $adminWithRole->name,
+            'email' => $adminWithRole->email,
+            'last_login_at' => $formattedLastLogin,
+            'role' => $adminWithRole->role
+        ],
     ]);
 }
 }
