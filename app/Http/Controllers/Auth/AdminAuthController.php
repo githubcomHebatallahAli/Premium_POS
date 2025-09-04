@@ -130,10 +130,37 @@ class AdminAuthController extends Controller
 
 
 
+    // public function refresh()
+    // {
+    //     return $this->createNewToken(auth()->guard('admin')->refresh());
+    // }
+
     public function refresh()
-    {
-        return $this->createNewToken(auth()->guard('admin')->refresh());
+{
+    try {
+        $token = auth()->guard('admin')->refresh();
+        $admin = auth()->guard('admin')->user();
+        
+        if (!$admin) {
+            return response()->json([
+                'error' => 'Unauthenticated',
+                'message' => 'Admin user not found'
+            ], 401);
+        }
+        
+        return response()->json([
+            'access_token' => $token,
+            'token_type' => 'bearer',
+            'expires_in' => auth()->factory()->getTTL() * 60,
+            'admin' => $admin,
+        ]);
+        
+    } catch (\Tymon\JWTAuth\Exceptions\TokenInvalidException $e) {
+        return response()->json(['error' => 'Invalid token'], 401);
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'Could not refresh token'], 401);
     }
+}
 
 
     public function userProfile()
@@ -147,8 +174,8 @@ class AdminAuthController extends Controller
     protected function createNewToken($token)
     {
         $admin = auth()->guard('admin')->user();
-        $admin->last_login_at = Carbon::parse($admin->last_login_at)
-        ->timezone('Africa/Cairo')->format('Y-m-d H:i:s');
+        // $admin->last_login_at = Carbon::parse($admin->last_login_at)
+        // ->timezone('Africa/Cairo')->format('Y-m-d H:i:s');
         $admin = Admin::with('role:id,name')->find(auth()->guard('admin')->id());
         return response()->json([
             'access_token' => $token,
