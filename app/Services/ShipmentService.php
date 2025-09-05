@@ -200,7 +200,6 @@ public function partialReturn(Shipment $shipment, array $products): Shipment
 
             $returnQty = min($productData['quantity'], $product->pivot->quantity);
 
-            // تحديث كمية الشحنة في جدول shipment_products
             $newQuantity = $product->pivot->quantity - $returnQty;
             
             if ($newQuantity > 0) {
@@ -214,12 +213,14 @@ public function partialReturn(Shipment $shipment, array $products): Shipment
 
             $returnedProducts[] = [
                 'product_id' => $product->id,
+                'product_name' => $product->name,
                 'quantity' => $returnQty,
-                'reason' => $productData['reason'] ?? 'Partial return'
+                'unit_price' => $product->pivot->unitPrice,
+                'total_price' => $product->pivot->unitPrice * $returnQty,
+                'reason' => $productData['reason'] ?? 'إرجاع جزئي'
             ];
         }
 
-        // إعادة حساب إجماليات الشحنة
         $total = $shipment->products->sum(function($product) {
             return $product->pivot->price;
         });
@@ -228,10 +229,10 @@ public function partialReturn(Shipment $shipment, array $products): Shipment
 
         $shipment->update([
             'status' => 'partialReturn',
-            'returnReason' => json_encode($returnedProducts)
+            'returnReason' => json_encode($returnedProducts, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)
         ]);
 
-        return $shipment->fresh('products');
+        return $shipment->fresh(['products', 'supplier']);
     });
 }
 
