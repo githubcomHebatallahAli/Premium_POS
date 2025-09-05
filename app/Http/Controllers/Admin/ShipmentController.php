@@ -172,7 +172,7 @@ public function updatePaidAmount(UpdatePaidAmountRequest $request, $id)
         return $this->forceDeleteModel(Shipment::class, $id);
     }
 
-    public function fullReturn($id)
+    public function fullReturn($id) 
 {
     $shipment = Shipment::findOrFail($id);
 
@@ -192,7 +192,7 @@ public function partialReturn(Request $request, $id)
 
     return response()->json([
         'message' => 'Shipment partially returned',
-        'data' => new ShipmentResource($returned),
+        'data' => new ShipmentProductResource($returned),
     ]);
 }
 }
