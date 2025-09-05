@@ -48,7 +48,7 @@ public function edit($id)
 
     return response()->json([
         'message' => 'Shipment fetched successfully',
-        'data' => new ShipmentResource($shipment),
+        'data' => new ShipmentProductResource($shipment),
     ]);
 }
 
