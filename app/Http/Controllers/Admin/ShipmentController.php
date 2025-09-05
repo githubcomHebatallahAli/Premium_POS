@@ -180,7 +180,7 @@ public function updatePaidAmount(UpdatePaidAmountRequest $request, $id)
 
     return response()->json([
         'message' => 'Shipment fully returned',
-        'data' => new ShipmentResource($returned),
+        'data' => new ShipmentProductResource($returned),
     ]);
 }
 
