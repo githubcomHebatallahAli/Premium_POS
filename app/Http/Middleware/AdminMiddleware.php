@@ -14,21 +14,30 @@ class AdminMiddleware
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-   public function handle(Request $request, Closure $next): Response
+      public function handle(Request $request, Closure $next): Response
     {
-        // التحقق من وجود توكن للإدمن
-        if (Auth::guard('admin')->check()) {
-            return $next($request);
-        }
-        
-        // إذا كان المستخدم موجود في جدول الإدمن ولكن التوكن منتهي
-        if ($request->user('admin')) {
-            return response()->json([
-                'message' => 'Token Expired'
-            ], 401);
+        try {
+            // التحقق من وجود توكن صالح للإدمن
+            if (Auth::guard('admin')->check()) {
+                return $next($request);
+            }
+            
+            // إذا كان هناك توكن ولكن غير صالح أو منتهي
+            if ($request->bearerToken() && !Auth::guard('admin')->check()) {
+                return response()->json([
+                    'message' => 'Token Expired'
+                ], 401);
+            }
+        } catch (\Exception $e) {
+            // في حالة وجود أي خطأ في المصادقة (مثل توكن منتهي)
+            if ($request->bearerToken()) {
+                return response()->json([
+                    'message' => 'Token Expired'
+                ], 401);
+            }
         }
 
-        // إذا كان المستخدم غير مصرح له بالدخول
+        // إذا كان المستخدم غير مصرح له بالدخول (لا يوجد توكن أساسًا)
         return response()->json([
             'message' => 'Unauthorized User'
         ], 403);
