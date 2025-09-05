@@ -20,8 +20,8 @@ class ShipmentResource extends JsonResource
             'supplierName' => $this->supplier->supplierName,
             'supplier_id' => $this -> supplier_id,
             'invoiceAfterDiscount' => $this -> invoiceAfterDiscount,
-            // 'paidAmount'=> $this ->paidAmount,
-            // 'remainingAmount' => $this -> remainingAmount,
+            'paidAmount'=> $this ->paidAmount,
+            'remainingAmount' => $this -> remainingAmount,
             'status' => $this -> status,
             'creationDate' => $this -> creationDate,
 

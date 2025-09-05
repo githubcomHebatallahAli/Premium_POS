@@ -10,75 +10,6 @@ use Illuminate\Support\Facades\Log;
 
 class ShipmentService
 {
-
-
-// public function create(array $data): Shipment
-// {
-//     return DB::transaction(function () use ($data) {
-//         // إنشاء الشحنة
-//         $shipment = Shipment::create([
-//             'supplier_id' => $data['supplier_id'],
-//             'importer' => $data['importer'] ?? null,
-//             'admin_id' => auth()->id(),
-//             'discount' => $data['discount'] ?? 0,
-//             'discountType' => isset($data['discountType']) ? $data['discountType'] : null,
-//             'extraAmount' => $data['extraAmount'] ?? 0,
-//             'taxType' => isset($data['taxType']) ? $data['taxType'] : null,
-//             'paidAmount' => $data['paidAmount'] ?? 0,
-//             'creationDate' => now(),
-//             'payment' => isset($data['payment']) ? $data['payment'] : null, // null إذا متكتبش
-//         ]);
-
-//         $total = 0;
-
-//         foreach ($data['products'] as $productData) {
-//             $productId = $productData['id'] ?? $productData['product_id'] ?? null;
-            
-//             if (!$productId) {
-//                 throw new \Exception("Product ID is required for all products");
-//             }
-
-//             $product = Product::findOrFail($productId);
-
-//             // سعر القطعة الواحدة
-//             $unitPrice = $productData['unitPrice'] ?? $product->purchasePrice;
-            
-//             // إذا unitPrice فاضي نستخدم سعر الشراء الحالي
-//             if (empty($unitPrice)) {
-//                 $unitPrice = $product->purchasePrice;
-//             }
-
-//             // السعر الإجمالي للكمية
-//             $totalPrice = $productData['quantity'] * $unitPrice;
-
-//             // إنشاء منتج الشحنة
-//             $shipmentProduct = ShipmentProduct::create([
-//                 'shipment_id' => $shipment->id,
-//                 'product_id' => $product->id,
-//                 'quantity' => $productData['quantity'],
-//                 'unitPrice' => $unitPrice,
-//                 'price' => $totalPrice,
-//             ]);
-
-//             // تحديث أسعار المنتج
-//             $product->update([
-//                 'purchasePrice' => $unitPrice,
-//                 'sellingPrice' => $unitPrice * 1.2
-//             ]);
-
-//             $total += $totalPrice;
-//         }
-
-//         // حساب الإجماليات النهائية - تأكد من أن الدالة بتشتغل
-//         $this->calculateTotals($shipment, $total);
-
-//         // تحديث عدد المنتجات
-//         $shipment->updateShipmentProductsCount();
-
-//         return $shipment->fresh(['products', 'supplier']);
-//     });
-// }
-
 public function create(array $data): Shipment
 {
     return DB::transaction(function () use ($data) {
@@ -184,44 +115,64 @@ public function calculateTotals(Shipment $shipment, float $total): void
 
 
 
-    public function update(Shipment $shipment, array $data): Shipment
-    {
-        return DB::transaction(function () use ($shipment, $data) {
-            // حذف المنتجات القديمة
-            $shipment->products()->delete();
+public function update(Shipment $shipment, array $data): Shipment
+{
+    return DB::transaction(function () use ($shipment, $data) {
+        // حذف المنتجات القديمة من جدول shipment_products
+        $shipment->products()->detach();
 
-            $shipment->update([
-                'supplier_id' => $data['supplier_id'],
-                'importer' => $data['importer'] ?? $shipment->importer,
-                'discount' => $data['discount'] ?? $shipment->discount,
-                'discountType' => $data['discountType'] ?? $shipment->discountType,
-                'extraAmount' => $data['extraAmount'] ?? $shipment->extraAmount,
-                'taxType' => $data['taxType'] ?? $shipment->taxType,
-                'paidAmount' => $data['paidAmount'] ?? $shipment->paidAmount,
-                'payment' => $data['payment'] ?? $shipment->payment,
-            ]);
+        $shipment->update([
+            'supplier_id' => $data['supplier_id'],
+            'importer' => $data['importer'] ?? $shipment->importer,
+            'discount' => $data['discount'] ?? $shipment->discount,
+            'discountType' => $data['discountType'] ?? $shipment->discountType,
+            'extraAmount' => $data['extraAmount'] ?? $shipment->extraAmount,
+            'taxType' => $data['taxType'] ?? $shipment->taxType,
+            'paidAmount' => $data['paidAmount'] ?? $shipment->paidAmount,
+            'payment' => $data['payment'] ?? $shipment->payment,
+        ]);
 
-            $total = 0;
+        $total = 0;
 
-            foreach ($data['products'] as $productData) {
-                $product = Product::findOrFail($productData['product_id']);
-
-                $shipmentProduct = ShipmentProduct::create([
-                    'shipment_id' => $shipment->id,
-                    'product_id' => $product->id,
-                    'quantity' => $productData['quantity'],
-                    'unitPrice' => $productData['unitPrice'],
-                    'totalPrice' => $productData['quantity'] * $productData['unitPrice'],
-                ]);
-
-                $total += $shipmentProduct->totalPrice;
+        foreach ($data['products'] as $productData) {
+            $productId = $productData['id'] ?? $productData['product_id'] ?? null;
+            
+            if (!$productId) {
+                throw new \Exception("Product ID is required for all products");
             }
 
-            $this->calculateTotals($shipment, $total);
+            $product = Product::findOrFail($productId);
 
-            return $shipment->fresh(['products', 'supplier']);
-        });
-    }
+            // تحديد سعر الشراء للقطعة
+            $unitPrice = $productData['unitPrice'] ?? null;
+            
+            // إذا سعر القطعة مش متوفر، نحسبه من سعر الجملة
+            if (empty($unitPrice) && isset($productData['price'])) {
+                $unitPrice = $productData['price'] / $productData['quantity'];
+            }
+
+            // سعر الجملة الإجمالي
+            $totalPrice = $productData['price'] ?? $productData['quantity'] * $unitPrice;
+
+            // إضافة المنتج للشحنة في جدول shipment_products
+            $shipment->products()->attach($product->id, [
+                'quantity' => $productData['quantity'],
+                'unitPrice' => $unitPrice,
+                'price' => $totalPrice,
+            ]);
+
+            $total += $totalPrice;
+        }
+
+        // حساب الإجماليات النهائية للشحنة
+        $this->calculateTotals($shipment, $total);
+
+        // تحديث عدد المنتجات في الشحنة
+        $shipment->updateShipmentProductsCount();
+
+        return $shipment->fresh(['products', 'supplier']);
+    });
+}
 
 
 public function fullReturn(Shipment $shipment): Shipment
