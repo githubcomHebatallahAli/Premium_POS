@@ -22,7 +22,7 @@ class Product extends Model
         'size',
         'clothes',
         'country',
-        'endDate',
+        // 'endDate',
         'code',
         'description',
     ];
@@ -51,7 +51,7 @@ class Product extends Model
     public function shipments()
     {
         return $this->belongsToMany(Shipment::class, 'shipment_products')
-        ->withPivot('quantity', 'price','unitPrice', 'returnReason');
+        ->withPivot('quantity', 'price','unitPrice', 'returnReason','endDate');
     }
 
     public function invoices()

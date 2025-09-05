@@ -22,7 +22,7 @@ return new class extends Migration
             $table->String('size')->nullable();
             $table->enum('clothes', ['sm', 'md','lg','xl','2xl','3xl','4xl','5xl','6xl','+xl'])->nullable();
             $table->String('country')->nullable();
-            $table->Date('endDate')->nullable();
+            // $table->Date('endDate')->nullable();
             $table->String('code')->nullable()->unique();
             $table->timestamp('creationDate')->nullable();
             $table->text('description')->nullable();

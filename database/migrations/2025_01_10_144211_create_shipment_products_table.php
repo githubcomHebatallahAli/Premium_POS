@@ -19,6 +19,7 @@ return new class extends Migration
             $table->decimal('price', 10, 2)->nullable();
             $table->decimal('unitPrice', 10, 2)->nullable();
             $table->text('returnReason')->nullable();
+            $table->Date('endDate')->nullable();
             $table->timestamps();
         });
     }

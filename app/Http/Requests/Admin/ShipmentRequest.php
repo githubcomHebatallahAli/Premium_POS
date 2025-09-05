@@ -44,6 +44,7 @@ class ShipmentRequest extends FormRequest
             'products.*.price' => 'nullable|numeric|min:0',
             'products.*.unitPrice' => 'nullable|numeric|min:0',
             'products.*.returnReason' => 'nullable|string',
+            'products.*.endDate' => 'nullable|date_format:Y-m-d',
         ];
     }
 

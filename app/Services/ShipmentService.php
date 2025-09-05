@@ -55,7 +55,8 @@ public function create(array $data): Shipment
                 'product_id' => $product->id,
                 'quantity' => $productData['quantity'],
                 'unitPrice' => $unitPrice,  // سعر الشراء للقطعة
-                'price' => $totalPrice,     // سعر الشراء الإجمالي للكمية
+                'price' => $totalPrice,
+                'endDate' => $productData['endDate'] ?? null,
             ]);
 
             $total += $totalPrice;
@@ -159,6 +160,7 @@ public function update(Shipment $shipment, array $data): Shipment
                 'quantity' => $productData['quantity'],
                 'unitPrice' => $unitPrice,
                 'price' => $totalPrice,
+                'endDate' => $productData['endDate'] ?? null,
             ]);
 
             $total += $totalPrice;

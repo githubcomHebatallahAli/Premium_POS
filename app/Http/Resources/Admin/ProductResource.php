@@ -33,7 +33,7 @@ class ProductResource extends JsonResource
             'size' => $this -> size,
             'clothes' => $this -> clothes,
             'country' => $this -> country,
-            'endDate' => $this -> endDate,
+            // 'endDate' => $this -> endDate,
             'code' => $this -> code,
             'description' => $this -> description,
             "totalQuantity" => $totalQuantity,

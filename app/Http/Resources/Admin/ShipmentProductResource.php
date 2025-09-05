@@ -43,6 +43,7 @@ class ShipmentProductResource extends JsonResource
                     'price' => $product->pivot->price,
                     'unitPrice' => $product->pivot->unitPrice,
                     'returnReason' => $product->pivot->returnReason,
+                    'endDate' => $product->pivot->endDate,
                 ];
             }),
 

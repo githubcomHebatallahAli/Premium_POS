@@ -15,5 +15,6 @@ class ShipmentProduct extends Model
         'quantity',
         'unitPrice',
         'returnReason',
+        'endDate',
     ];
 }
