@@ -245,5 +245,16 @@ public function partialReturn(Shipment $shipment, array $products): Shipment
     });
 }
 
+public function recalculateTotals(Shipment $shipment): void
+{
+    // نحسب الـ total من المنتجات
+    $total = $shipment->products->sum(function($product) {
+        return $product->pivot->price;
+    });
+    
+    // ثم نستدعي الدالة الأصلية
+    $this->calculateTotals($shipment, $total);
+}
+
 
 }

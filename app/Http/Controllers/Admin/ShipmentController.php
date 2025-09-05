@@ -44,11 +44,11 @@ class ShipmentController extends Controller
 public function edit($id)
 {
     $shipment = Shipment::with(['products', 'supplier'])->findOrFail($id);
-    $this->shipmentService->calculateTotals($shipment);
+    $this->shipmentService->recalculateTotals($shipment);
 
     return response()->json([
         'message' => 'Shipment fetched successfully',
-        'data' => new ShipmentProductResource($shipment),
+        'data' => new ShipmentResource($shipment),
     ]);
 }
 
