@@ -178,14 +178,7 @@ public function update(Shipment $shipment, array $data): Shipment
 public function fullReturn(Shipment $shipment): Shipment
 {
     return DB::transaction(function () use ($shipment) {
-        // إعادة الكميات للمنتجات
-        foreach ($shipment->products as $product) {
-            $product->increment('remainingQuantity', $product->pivot->quantity);
-            
-            // تحديث سعر الشراء إذا needed
-            // $product->update(['purchasePrice' => ...]);
-        }
-
+        // فقط نغير حالة الشحنة بدون ما نلمس أي جدول تاني
         $shipment->update([
             'status' => 'return',
             'returnReason' => request('returnReason', 'Full return')
@@ -207,16 +200,13 @@ public function partialReturn(Shipment $shipment, array $products): Shipment
 
             $returnQty = min($productData['quantity'], $product->pivot->quantity);
 
-            // إعادة الكمية للمنتج
-            $product->increment('remainingQuantity', $returnQty);
-
-            // تحديث كمية الشحنة
+            // تحديث كمية الشحنة في جدول shipment_products
             $newQuantity = $product->pivot->quantity - $returnQty;
             
             if ($newQuantity > 0) {
                 $shipment->products()->updateExistingPivot($product->id, [
                     'quantity' => $newQuantity,
-                    'totalPrice' => $product->pivot->unitPrice * $newQuantity
+                    'price' => $product->pivot->unitPrice * $newQuantity
                 ]);
             } else {
                 $shipment->products()->detach($product->id);
@@ -229,9 +219,9 @@ public function partialReturn(Shipment $shipment, array $products): Shipment
             ];
         }
 
-        // إعادة حساب الإجماليات
+        // إعادة حساب إجماليات الشحنة
         $total = $shipment->products->sum(function($product) {
-            return $product->pivot->quantity * $product->pivot->unitPrice;
+            return $product->pivot->price;
         });
 
         $this->calculateTotals($shipment, $total);
