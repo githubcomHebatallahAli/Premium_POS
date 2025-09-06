@@ -157,7 +157,7 @@ $this->authorize('manage_users');
                 'size' => $request->size,
                 'clothes' => $request->clothes,
                 'country' => $request->country,
-                'endDate' => $request->endDate,
+                // 'endDate' => $request->endDate,
                 'code' => $request->code,
                 'description' => $request->description,
             ]);
@@ -230,7 +230,7 @@ $this->authorize('manage_users');
                 'size' => $request->size,
                 'clothes' => $request->clothes,
                 'country' => $request->country,
-                'endDate' => $request->endDate,
+                // 'endDate' => $request->endDate,
                 'code' => $request->code,
                 'description' => $request->description,
             ]);
