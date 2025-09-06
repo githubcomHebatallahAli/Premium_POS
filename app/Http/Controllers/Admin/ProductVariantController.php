@@ -114,7 +114,7 @@ $this->authorize('manage_users');
         $uploadedImages = [];
         
         foreach ($request->file('images') as $image) {
-            $path = $image->store(ProductVariant::storageFolder());
+            $path = $image->store(ProductVariant::storageFolder);
             $uploadedImages[] = $path;
         }
         
