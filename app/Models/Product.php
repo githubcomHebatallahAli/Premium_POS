@@ -15,15 +15,11 @@ class Product extends Model
         'brand_id',
         'name',
         'sellingPrice',
-        'discount',
-        'image',
+        'mainImage',
         'creationDate',
-        'color',
-        'size',
-        'clothes',
         'country',
-        // 'endDate',
-        'code',
+        'sku',
+        'barCode',
         'description',
     ];
 
@@ -47,7 +43,13 @@ class Product extends Model
     {
         return $this->belongsTo(Brand::class);
     }
-    
+
+    public function productVariants()
+    {
+        return $this->hasMany(ProductVariant::class);
+    }
+
+
     public function shipments()
     {
         return $this->belongsToMany(Shipment::class, 'shipment_products')
@@ -59,6 +61,8 @@ class Product extends Model
         return $this->belongsToMany(Invoice::class ,'invoice_products' )
         ->withPivot('quantity','total','profit','shipment_id','returnReason');
     }
+
+
 
     public function depts()
     {

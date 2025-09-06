@@ -63,22 +63,21 @@ class ProductController extends Controller
     if ($request->filled('category_id')) {
         $query->where('category_id', $request->category_id);
     }
-    if ($request->filled('color')) {
-        $query->where('color', $request->color);
-    }
-    if ($request->filled('size')) {
-        $query->where('size', $request->size);
-    }
+    // if ($request->filled('color')) {
+    //     $query->where('color', $request->color);
+    // }
+    // if ($request->filled('size')) {
+    //     $query->where('size', $request->size);
+    // }
 
-    if ($request->filled('clothes')) {
-        $query->where('clothes', $request->clothes);
-    }
+    // if ($request->filled('clothes')) {
+    //     $query->where('clothes', $request->clothes);
+    // }
 
-    if ($request->filled('endDate')) {
-        $query->where('endDate', $request->endDate);
-    }
+    // if ($request->filled('endDate')) {
+    //     $query->where('endDate', $request->endDate);
+    // }
 
-    
 
         $Product = $Product->orderBy('created_at', 'desc')
                            ->paginate(10);
@@ -130,41 +129,25 @@ $this->authorize('manage_users');
     {
         $this->authorize('manage_users');
         // $this->authorize('create',Product::class);
-        
-        $formattedPriceBeforeDiscount = number_format($request->priceBeforeDiscount, 2, '.', '');
         $formattedSellingPrice = number_format($request->sellingPrice, 2, '.', '');
-        // $formattedPurchesPrice = number_format($request->purchesPrice, 2, '.', '');
-        // $profit = $formattedSellingPrice - $formattedPurchesPrice;
-
-        // $discountValue = null;
-        // if ($request->priceBeforeDiscount && $request->sellingPrice) {
-        //     $discountAmount = $formattedPriceBeforeDiscount - $formattedSellingPrice;
-        //     $discountValue = ($discountAmount / $formattedPriceBeforeDiscount) * 100;
-        // }
-
+      
            $Product =Product::create ([
                 "category_id" => $request->category_id,
                 "brand_id" => $request->brand_id,
                 "name" => $request->name,
-                // "quantity" => $request->quantity,
                 "sellingPrice" => $formattedSellingPrice,
-                // "purchesPrice" =>  $formattedPurchesPrice,
-                // "profit" => $profit,
-                // "priceBeforeDiscount" => $formattedPriceBeforeDiscount,
-                // "discount" => $discountValue,
                 'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
-                'color' => $request->color,
-                'size' => $request->size,
-                'clothes' => $request->clothes,
+                // 'color' => $request->color,
+                // 'size' => $request->size,
+                // 'clothes' => $request->clothes,
                 'country' => $request->country,
-                // 'endDate' => $request->endDate,
-                'code' => $request->code,
+                'barcode' => $request->barcode,
                 'description' => $request->description,
             ]);
 
-            if ($request->hasFile('image')) {
-                $imagePath = $request->file('image')->store(Product::storageFolder);
-                $Product->image = $imagePath;
+            if ($request->hasFile('MainImage')) {
+                $MainImagePath = $request->file('MainImage')->store(Product::storageFolder);
+                $Product->MainImage = $MainImagePath;
             }
 
            $Product->save();
@@ -196,18 +179,9 @@ $this->authorize('manage_users');
         public function update(ProductRequest $request, string $id)
         {
             $this->authorize('manage_users');
-            // $formattedPriceBeforeDiscount = number_format($request->priceBeforeDiscount, 2, '.', '');
             $formattedSellingPrice = number_format($request->sellingPrice, 2, '.', '');
-            // $formattedPurchesPrice = number_format($request->purchesPrice, 2, '.', '');
-            // $profit = $formattedSellingPrice - $formattedPurchesPrice;
-
-            // $discountValue = null;
-            // if ($request->priceBeforeDiscount && $request->sellingPrice) {
-            //     $discountAmount = $formattedPriceBeforeDiscount - $formattedSellingPrice;
-            //     $discountValue = ($discountAmount / $formattedPriceBeforeDiscount) * 100;
-            // }
+           
            $Product =Product::findOrFail($id);
-
            if (!$Product) {
             return response()->json([
                 'message' => "Product not found."
@@ -219,28 +193,22 @@ $this->authorize('manage_users');
                 "category_id" => $request->category_id,
                 "brand_id" => $request->brand_id,
                 "name" => $request->name,
-                // "quantity" => $request->quantity,
                 "sellingPrice" => $formattedSellingPrice,
-                // "purchesPrice" => $formattedPurchesPrice,
-                // "profit" =>  $profit,
-                // "priceBeforeDiscount" => $formattedPriceBeforeDiscount,
-                // "discount" => $discountValue,
-                'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
-                'color' => $request->color,
-                'size' => $request->size,
-                'clothes' => $request->clothes,
+                // 'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
+                // 'color' => $request->color,
+                // 'size' => $request->size,
+                // 'clothes' => $request->clothes,
                 'country' => $request->country,
-                // 'endDate' => $request->endDate,
-                'code' => $request->code,
+                'barcode' => $request->barcode,
                 'description' => $request->description,
             ]);
 
-            if ($request->hasFile('image')) {
-                if ($Product->image) {
-                    Storage::disk('public')->delete( $Product->image);
+            if ($request->hasFile('MainImage')) {
+                if ($Product->MainImage) {
+                    Storage::disk('public')->delete( $Product->MainImage);
                 }
-                $imagePath = $request->file('image')->store('Products', 'public');
-                 $Product->image = $imagePath;
+                $MainImagePath = $request->file('MainImage')->store('Products', 'public');
+                 $Product->MainImage = $MainImagePath;
             }
             $Product->save();
 
