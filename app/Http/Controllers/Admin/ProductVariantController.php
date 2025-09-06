@@ -99,7 +99,6 @@ $this->authorize('manage_users');
       
            $ProductVariant =ProductVariant::create ([
                 "product_id" => $request->product_id,
-               
                 "sellingPrice" => $formattedSellingPrice,
                 'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
                 'color' => $request->color,
@@ -107,12 +106,19 @@ $this->authorize('manage_users');
                 'clothes' => $request->clothes,
                 'barcode' => $request->barcode,
                 'notes' => $request->notes,
+                'images' => [] 
             ]);
 
-            if ($request->hasFile('images')) {
-                $imagesPath = $request->file('images')->store(ProductVariant::storageFolder);
-                $ProductVariant->images = $imagesPath;
-            }
+              if ($request->hasFile('images')) {
+        $uploadedImages = [];
+        
+        foreach ($request->file('images') as $image) {
+            $path = $image->store(ProductVariant::storageFolder());
+            $uploadedImages[] = $path;
+        }
+        
+        $ProductVariant->update(['images' => $uploadedImages]);
+    }
 
            $ProductVariant->save();
            return response()->json([

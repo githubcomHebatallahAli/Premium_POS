@@ -16,7 +16,7 @@ class AdminSeeder extends Seeder
     {
         DB::table('admins')->insert([
             'name' => 'Super Admin',
-            'email' => 'superAdmin@example.com',
+            'email' => 'superAdmin@mail.com',
             'password' => Hash::make('123456'),
             'phoNum'=>'0111223344',
             'address' => 'Moharram Bey',
@@ -27,7 +27,7 @@ class AdminSeeder extends Seeder
 
         DB::table('admins')->insert([
             'name' => 'Admin',
-            'email' => 'admin@example.com',
+            'email' => 'admin@mail.com',
             'password' => Hash::make('234567'),
             'phoNum'=>'0111334455',
             'address' => 'Moharram Bey',
@@ -38,7 +38,7 @@ class AdminSeeder extends Seeder
 
         DB::table('admins')->insert([
             'name' => 'Employee',
-            'email' => 'employee@example.com',
+            'email' => 'employee@mail.com',
             'password' => Hash::make('345678'),
             'phoNum'=>'0111445566',
             'address' => 'Moharram Bey',
