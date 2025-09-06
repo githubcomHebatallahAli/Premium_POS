@@ -8,6 +8,7 @@ require __DIR__ . '/Apis/Admin/admin.php';
 require __DIR__ . '/Apis/Admin/category.php';
 require __DIR__ . '/Apis/Admin/brand.php';
 require __DIR__ . '/Apis/Admin/product.php';
+require __DIR__ . '/Apis/Admin/productVariant.php';
 require __DIR__ . '/Apis/Admin/shipment.php';
 require __DIR__ . '/Apis/Admin/invoice.php';
 require __DIR__ . '/Apis/Admin/dept.php';
