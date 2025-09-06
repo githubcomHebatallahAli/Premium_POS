@@ -142,6 +142,7 @@ $this->authorize('manage_users');
                 // 'clothes' => $request->clothes,
                 'country' => $request->country,
                 'barcode' => $request->barcode,
+                'sku' => $request->sku,
                 'description' => $request->description,
             ]);
 
@@ -200,6 +201,7 @@ $this->authorize('manage_users');
                 // 'clothes' => $request->clothes,
                 'country' => $request->country,
                 'barcode' => $request->barcode,
+                'sku' => $request->sku,
                 'description' => $request->description,
             ]);
 

@@ -28,6 +28,7 @@ class ProductResource extends JsonResource
             'creationDate' => $this -> creationDate,
             'country' => $this -> country,
             'barCode' => $this -> barCode,
+            'sku' => $this -> sku,
             'description' => $this -> description,
             "totalQuantity" => $totalQuantity,
         ];
