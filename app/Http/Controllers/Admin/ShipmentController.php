@@ -125,11 +125,11 @@ public function updatePaidAmount(UpdatePaidAmountRequest $request, $id)
     $remainingAmount = $shipment->invoiceAfterDiscount - $shipment->paidAmount;
     $shipment->remainingAmount = $remainingAmount;
 
-    // تحديث الحالة - نفس الفاتورة بالظبط
+
     if ($remainingAmount <= 0) {
-        $shipment->status = 'completed'; // مدفوع بالكامل
+        $shipment->status = 'completed';
     } else {
-        $shipment->status = 'indebted'; // غير مكتمل الدفع
+        $shipment->status = 'indebted'; 
     }
 
     $shipment->save();
