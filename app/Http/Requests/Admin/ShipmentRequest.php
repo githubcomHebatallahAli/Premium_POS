@@ -40,6 +40,7 @@ class ShipmentRequest extends FormRequest
             'description' => 'nullable|string',
              'products' => 'required|array',
             'products.*.id' => 'required|exists:products,id',
+            'products.*.product_variant_id' => 'required|exists:product_variants,id',
             'products.*.quantity' => 'required|integer|min:1',
             'products.*.price' => 'nullable|numeric|min:0',
             'products.*.unitPrice' => 'nullable|numeric|min:0',

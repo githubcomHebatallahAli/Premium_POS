@@ -49,26 +49,36 @@ public function create(array $data): Shipment
             // سعر الجملة الإجمالي
             $totalPrice = $productData['price'] ?? $productData['quantity'] * $unitPrice;
 
-            // إنشاء منتج الشحنة في جدول shipment_products
+            
             ShipmentProduct::create([
                 'shipment_id' => $shipment->id,
                 'product_id' => $product->id,
+                'product_variant_id' => $productData['product_variant_id'],
                 'quantity' => $productData['quantity'],
                 'unitPrice' => $unitPrice,  // سعر الشراء للقطعة
                 'price' => $totalPrice,
                 'endDate' => $productData['endDate'] ?? null,
             ]);
 
+                 // إضافة إلى المخزون
+                // Inventory::create([
+                //     'product_variant_id' => $productData['product_variant_id'],
+                //     'shipment_product_id' => $shipmentProduct->id,
+                //     'remaining_quantity' => $productData['quantity'],
+                //     'purchase_price' => $productData['purchase_price'],
+                //     'expiry_date' => $productData['expiry_date'] ?? null,
+                // ]);
+
             $total += $totalPrice;
         }
 
-        // حساب الإجماليات النهائية للشحنة
+        
         $this->calculateTotals($shipment, $total);
 
-        // تحديث عدد المنتجات في الشحنة
+    
         $shipment->updateShipmentProductsCount();
 
-        return $shipment->fresh(['products', 'supplier']);
+        return $shipment->fresh(['products', 'supplier', 'shipmentProducts.variant']);
     });
 }
 

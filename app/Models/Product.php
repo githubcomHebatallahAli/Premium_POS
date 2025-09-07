@@ -44,7 +44,7 @@ class Product extends Model
         return $this->belongsTo(Brand::class);
     }
 
-    public function productVariants()
+    public function variants()
     {
         return $this->hasMany(ProductVariant::class);
     }
@@ -53,7 +53,8 @@ class Product extends Model
     public function shipments()
     {
         return $this->belongsToMany(Shipment::class, 'shipment_products')
-        ->withPivot('quantity', 'price','unitPrice', 'returnReason','endDate');
+         ->using(ShipmentProduct::class)
+        ->withPivot('quantity', 'price','unitPrice', 'returnReason','endDate','product_variant_id');
     }
 
     public function invoices()

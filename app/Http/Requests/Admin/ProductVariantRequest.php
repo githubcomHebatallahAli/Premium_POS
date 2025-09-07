@@ -22,17 +22,39 @@ class ProductVariantRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'product_id' => 'required|exists:products,id',
-            'color' => 'nullable|string',
-            'size' => 'nullable|string',
-            'clothes' => 'nullable|string',
-            'sku' => 'nullable|string|unique:product_variants,sku,'.$this->id,
-            'barcode' => 'nullable|string|unique:product_variants,barcode,'.$this->id,
+            // 'product_id' => 'required|exists:products,id',
+            // 'color' => 'nullable|string',
+            // 'size' => 'nullable|string',
+            // 'clothes' => 'nullable|string',
+            // 'sku' => 'nullable|string|unique:product_variants,sku,'.$this->id,
+            // 'barcode' => 'nullable|string|unique:product_variants,barcode,'.$this->id,
+            // 'sellingPrice' => 'required|numeric|min:0',
+            // 'images' => 'nullable|array',
+            // 'images.*'=>'nullable|image|mimes:jpg,jpeg,png,gif,svg',
+            // 'creationDate'=> 'nullable|date_format:Y-m-d H:i:s',
+            // 'notes' => 'nullable|string',
+
+
+            'name' => 'required|string|max:255',
             'sellingPrice' => 'required|numeric|min:0',
-            'images' => 'nullable|array',
-            'images.*'=>'nullable|image|mimes:jpg,jpeg,png,gif,svg',
-            'creationDate'=> 'nullable|date_format:Y-m-d H:i:s',
-            'notes' => 'nullable|string',
+            'mainImage.*'=>'nullable|image|mimes:jpg,jpeg,png,gif,svg',
+            'category_id' => 'required|exists:categories,id',
+            'brand_id' => 'nullable|exists:brands,id',
+            'description' => 'nullable|string',
+            'country' => 'nullable|string',
+            'barcode' => 'nullable|string|unique:products,barcode',
+            'sku' => 'nullable|string|unique:products,sku,'.$this->id,
+            
+            'variants' => 'nullable|array',
+            'variants.*.color' => 'nullable|string',
+            'variants.*.size' => 'nullable|string',
+            'variants.*.clothes' => 'nullable|string',
+            'variants.*.sellingPrice' => 'nullable|numeric|min:0',
+            'variants.*.images' => 'nullable|array',
+            'variants.*.images.*' => 'nullable|image|mimes:jpg,jpeg,png,gif,svg',
+            'variants.*.barcode' => 'nullable|string|unique:product_variants,barcode',
+            'variants.*.sku' => 'nullable|string|unique:product_variants,sku',
+            'variants.*.notes' => 'nullable|string'
         ];
     }
 }

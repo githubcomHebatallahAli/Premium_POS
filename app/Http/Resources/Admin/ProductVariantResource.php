@@ -15,17 +15,16 @@ class ProductVariantResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            "id" => $this -> id,
-            'product' => new ProductResource($this->product),
-            "color" => $this -> color,
-            "size" => $this -> size,
-            "clothes" => $this -> clothes,
-            "sku" => $this -> sku,
-            "barcode" => $this -> barcode,
-            "sellingPrice" => $this -> sellingPrice,
-            'images' => $this -> images,
-            'creationDate' => $this -> creationDate,
-            'notes' => $this -> notes,
+          'id' => $this->id,
+            'color' => $this->color,
+            'size' => $this->size,
+            'clothes' => $this->clothes,
+            'sellingPrice' => $this->sellingPrice,
+            'images' => $this->images,
+            'sku' => $this->sku,
+            'barcode' => $this->barcode,
+            'notes' => $this->notes,
+            'creationDate' => $this->creationDate
         ];
     }
 }

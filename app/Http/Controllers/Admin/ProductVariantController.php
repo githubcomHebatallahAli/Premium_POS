@@ -4,15 +4,68 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ProductVariantRequest;
+use App\Http\Resources\Admin\ProductResource;
 use App\Http\Resources\Admin\ProductVariantResource;
+use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Services\ProductService;
 use App\Traits\ManagesModelsTrait;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class ProductVariantController extends Controller
 {
     use ManagesModelsTrait;
+    protected $productService;
+
+    public function __construct(ProductService $productService)
+    {
+        $this->productService = $productService;
+    }
+
+    public function create(ProductVariantRequest $request): JsonResponse
+    {
+        try {
+            $product = $this->productService->createProduct(
+                $request->validated(),
+                $request->file('mainImage')
+            );
+
+            return response()->json([
+                'data' => new ProductResource($product),
+                'message' => 'Product created successfully'
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error creating product: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function update(ProductVariantRequest $request, $id)
+    {
+        try {
+            $product = Product::findOrFail($id);
+            $updatedProduct = $this->productService->updateProduct(
+                $product,
+                $request->validated(),
+                $request->file('mainImage')
+            );
+
+            return response()->json([
+                'data' => new ProductResource($updatedProduct),
+                'message' => 'Product updated successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error updating product: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
             public function showAll(Request $request)
     {
         // $this->authorize('showAll',ProductVariant::class);
@@ -91,43 +144,6 @@ $this->authorize('manage_users');
 }
 
 
-    public function create(ProductVariantRequest $request)
-    {
-        $this->authorize('manage_users');
-        // $this->authorize('create',ProductVariant::class);
-        $formattedSellingPrice = number_format($request->sellingPrice, 2, '.', '');
-      
-           $ProductVariant =ProductVariant::create ([
-                "product_id" => $request->product_id,
-                "sellingPrice" => $formattedSellingPrice,
-                'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
-                'color' => $request->color,
-                'size' => $request->size,
-                'clothes' => $request->clothes,
-                'barcode' => $request->barcode,
-                'sku' => $request->sku,
-                'notes' => $request->notes,
-                'images' => [] 
-            ]);
-
-              if ($request->hasFile('images')) {
-        $uploadedImages = [];
-        
-        foreach ($request->file('images') as $image) {
-            $path = $image->store(ProductVariant::storageFolder);
-            $uploadedImages[] = $path;
-        }
-        
-        $ProductVariant->update(['images' => $uploadedImages]);
-    }
-
-           $ProductVariant->save();
-           return response()->json([
-            'data' =>new ProductVariantResource($ProductVariant),
-            'message' => "ProductVariant Created Successfully."
-        ]);
-        }
-
         public function edit(string $id)
         {
             $this->authorize('manage_users');
@@ -147,45 +163,7 @@ $this->authorize('manage_users');
             ]);
         }
 
-        public function update(ProductVariantRequest $request, string $id)
-        {
-            $this->authorize('manage_users');
-            $formattedSellingPrice = number_format($request->sellingPrice, 2, '.', '');
-           
-           $ProductVariant =ProductVariant::findOrFail($id);
-           if (!$ProductVariant) {
-            return response()->json([
-                'message' => "ProductVariant not found."
-            ], 404);
-        }
 
-        // $this->authorize('update',$ProductVariant);
-           $ProductVariant->update([
-                "product_id" => $request->product_id,
-                "sellingPrice" => $formattedSellingPrice,
-                'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
-                'color' => $request->color,
-                'size' => $request->size,
-                'clothes' => $request->clothes,
-                'barcode' => $request->barcode,
-                'sku' => $request->sku,
-                'notes' => $request->notes,
-            ]);
-
-            if ($request->hasFile('images')) {
-                if ($ProductVariant->images) {
-                    Storage::disk('public')->delete( $ProductVariant->images);
-                }
-                $imagesPath = $request->file('images')->store('ProductVariants', 'public');
-                 $ProductVariant->images = $imagesPath;
-            }
-            $ProductVariant->save();
-
-           return response()->json([
-            'data' =>new ProductVariantResource($ProductVariant),
-            'message' => " Update ProductVariant By Id Successfully."
-        ]);
-    }
 
     public function destroy(string $id){
 
