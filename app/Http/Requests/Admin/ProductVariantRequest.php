@@ -3,6 +3,8 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Contracts\Validation\Validator;
 
 class ProductVariantRequest extends FormRequest
 {
@@ -56,5 +58,14 @@ class ProductVariantRequest extends FormRequest
             'variants.*.sku' => 'nullable|string|unique:product_variants,sku',
             'variants.*.notes' => 'nullable|string'
         ];
+    }
+
+        public function failedValidation(Validator $validator)
+    {
+        throw new HttpResponseException(response()->json([
+            'success'   => false,
+            'message'   => 'Validation errors',
+            'data'      => $validator->errors()
+        ]));
     }
 }
