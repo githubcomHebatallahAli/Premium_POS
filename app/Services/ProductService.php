@@ -142,7 +142,7 @@ class ProductService
 // }
 
 
-    public function create(array $data, $mainImage = null)
+    public function createProduct(array $data, $mainImage = null)
     {
         $mainImagePath = $this->uploadMainImage($mainImage);
 
@@ -165,7 +165,7 @@ class ProductService
         return $product->load(['category', 'brand', 'variants']);
     }
 
-    public function update(Product $product, array $data, $mainImage = null)
+    public function updateProduct(Product $product, array $data, $mainImage = null)
     {
         $updateData = [
             'name' => $data['name'],
