@@ -158,7 +158,7 @@ $this->authorize('manage_users');
             // $this->authorize('edit',$ProductVariant);
 
             return response()->json([
-                'data' => new ProductVariantResource($ProductVariant),
+                'data' => new ProductResource($ProductVariant),
                 'message' => "Edit ProductVariant By ID Successfully."
             ]);
         }
@@ -174,7 +174,7 @@ $this->authorize('manage_users');
         $this->authorize('manage_users');
     $ProductVariants=ProductVariant::onlyTrashed()->get();
     return response()->json([
-        'data' =>ProductVariantResource::collection($ProductVariants),
+        'data' =>ProductResource::collection($ProductVariants),
         'message' => "Show Deleted ProductVariants Successfully."
     ]);
     }
@@ -190,7 +190,7 @@ $this->authorize('manage_users');
     }
     $ProductVariant->restore();
     return response()->json([
-        'data' =>new ProductVariantResource($ProductVariant),
+        'data' =>new ProductResource($ProductVariant),
         'message' => "Restore ProductVariant By Id Successfully."
     ]);
     }
