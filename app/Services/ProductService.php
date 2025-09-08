@@ -234,19 +234,30 @@ class ProductService
         }
     }
 
-    private function generateProductSku($name)
-    {
-        return 'PROD-' . Str::upper(Str::substr(Str::slug($name), 0, 6)) . '-' . Str::random(4);
-    }
+private function generateProductSku($name)
+{
+    $random = Str::upper(Str::random(4)); // كود عشوائي حروف + أرقام
+    return $name . '-' . $random;
+}
 
-    private function generateVariantSku(Product $product, array $variantData)
-    {
-        $base = $product->sku ?: $this->generateProductSku($product->name);
-        $color = Str::substr($variantData['color'] ?? 'DEF', 0, 3);
-        $size = $variantData['size'] ?? 'DEF';
-        
-        return $base . '-' . Str::upper($color) . '-' . Str::upper($size);
-    }
+
+private function generateVariantSku(Product $product, array $variantData)
+{
+    $base = $product->name; 
+    $color = $variantData['color'] ?? null;
+    $size = $variantData['size'] ?? null;
+    $clothes = $variantData['clothes'] ?? null;
+    $random = Str::upper(Str::random(4));
+
+    $skuParts = [$base];
+
+    if ($color) $skuParts[] = $color;
+    if ($size) $skuParts[] = $size;
+    if ($clothes) $skuParts[] = $clothes;
+
+    return implode('-', $skuParts) . '-' . $random;
+}
+
 
     private function handleVariants(Product $product, array $variants)
     {
