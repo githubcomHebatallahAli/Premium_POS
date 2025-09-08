@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ProductVariantRequest;
 use App\Http\Resources\Admin\ProductResource;
 use App\Http\Resources\Admin\ProductVariantResource;
+use App\Http\Resources\Admin\ShowAllProductResource;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Services\ProductService;
@@ -82,20 +83,18 @@ class ProductVariantController extends Controller
     if ($request->filled('category_id')) {
         $query->where('category_id', $request->category_id);
     }
-    // if ($request->filled('color')) {
-    //     $query->where('color', $request->color);
-    // }
-    // if ($request->filled('size')) {
-    //     $query->where('size', $request->size);
-    // }
+    if ($request->filled('color')) {
+        $query->where('color', $request->color);
+    }
+    if ($request->filled('size')) {
+        $query->where('size', $request->size);
+    }
 
-    // if ($request->filled('clothes')) {
-    //     $query->where('clothes', $request->clothes);
-    // }
+    if ($request->filled('clothes')) {
+        $query->where('clothes', $request->clothes);
+    }
 
-    // if ($request->filled('endDate')) {
-    //     $query->where('endDate', $request->endDate);
-    // }
+  
 
 
         $ProductVariant = $ProductVariant->orderBy('created_at', 'desc')
@@ -121,7 +120,7 @@ class ProductVariantController extends Controller
           $this->authorize('manage_users');
         // $this->authorize('showAllProductVariant',ProductVariant::class);
 
-        $ProductVariant = ProductVariant::with(['category','brand'])->get();
+        $ProductVariant = ProductVariant::with(['category','brand','variants'])->get();
 
         return response()->json([
             'data' => ShowAllProductResource::collection($ProductVariant),
@@ -133,7 +132,7 @@ class ProductVariantController extends Controller
 {
     // $this->authorize('showProductVariantLessThan5', ProductVariant::class);
 $this->authorize('manage_users');
-    $ProductVariants = ProductVariant::with(['category', 'brand'])
+    $ProductVariants = ProductVariant::with(['category', 'brand', 'variants'])
                         ->where('quantity', '<=', 5)
                         ->get();
 
@@ -162,9 +161,6 @@ public function edit(string $id)
         'message' => "Edit Product By ID Successfully."
     ]);
 }
-
-
-
 
     public function destroy(string $id){
 

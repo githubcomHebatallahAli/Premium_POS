@@ -17,18 +17,15 @@ class ShowAllProductResource extends JsonResource
         $totalQuantity = $this->shipments()->sum('quantity');
         return [
             "id" => $this -> id,
-            "code" => $this -> code,
+            "barcode" => $this -> barcode,
             'image' => $this->image,
             "name" => $this -> name ,
             'categoryName' => $this->category->name ?? null,
             'brandName' => $this->brand->name ?? null,
-            // 'quantity' => $this -> quantity,
-            // 'priceBeforeDiscount'=>$this->priceBeforeDiscount,
-            // 'discount' => $this->discount ? number_format($this->discount, 2) . '%' : null,
             "sellingPrice" => $this -> sellingPrice,
             'totalQuantity' => $totalQuantity,
             "creationDate" => $this -> creationDate,
-            // "purchesPrice" => $this -> purchesPrice,
+           
         ];
     }
 }
