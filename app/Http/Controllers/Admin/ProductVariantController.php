@@ -71,7 +71,7 @@ class ProductVariantController extends Controller
         // $this->authorize('showAll',ProductVariant::class);
           $this->authorize('manage_users');
       
-        $ProductVariant = ProductVariant::with(['category','brand']);
+        $ProductVariant = Product::with(['category','brand','variants']);
         
     $query = ProductVariant::query();
 
@@ -102,7 +102,7 @@ class ProductVariantController extends Controller
                            ->paginate(10);
 
         return response()->json([
-            'data' => ShowAllProductVariantResource::collection($ProductVariant),
+            'data' => ShowAllProductResource::collection($ProductVariant),
             'pagination' => [
                 'total' => $ProductVariant->total(),
                 'count' => $ProductVariant->count(),
@@ -124,7 +124,7 @@ class ProductVariantController extends Controller
         $ProductVariant = ProductVariant::with(['category','brand'])->get();
 
         return response()->json([
-            'data' => ShowAllProductVariantResource::collection($ProductVariant),
+            'data' => ShowAllProductResource::collection($ProductVariant),
             'message' => "Show All ProductVariants."
         ]);
     }
@@ -138,7 +138,7 @@ $this->authorize('manage_users');
                         ->get();
 
     return response()->json([
-        'data' => ShowAllProductVariantResource::collection($ProductVariants),
+        'data' => ShowAllProductResource::collection($ProductVariants),
         'message' => "Show All ProductVariants with quantity <= 5."
     ]);
 }
@@ -168,12 +168,12 @@ public function edit(string $id)
 
     public function destroy(string $id){
 
-    return $this->destroyModel(ProductVariant::class, ProductVariantResource::class, $id);
+    return $this->destroyModel(Product::class, ProductResource::class, $id);
     }
 
     public function showDeleted(){
         $this->authorize('manage_users');
-    $ProductVariants=ProductVariant::onlyTrashed()->get();
+    $ProductVariants=Product::onlyTrashed()->get();
     return response()->json([
         'data' =>ProductResource::collection($ProductVariants),
         'message' => "Show Deleted ProductVariants Successfully."
@@ -183,7 +183,7 @@ public function edit(string $id)
     public function restore(string $id)
     {
        $this->authorize('manage_users');
-    $ProductVariant = ProductVariant::withTrashed()->where('id', $id)->first();
+    $ProductVariant = Product::withTrashed()->where('id', $id)->first();
     if (!$ProductVariant) {
         return response()->json([
             'message' => "ProductVariant not found."
@@ -198,6 +198,6 @@ public function edit(string $id)
 
     public function forceDelete(string $id){
 
-        return $this->forceDeleteModel(ProductVariant::class, $id);
+        return $this->forceDeleteModel(Product::class, $id);
     }
 }
