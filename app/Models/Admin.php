@@ -27,7 +27,6 @@ class Admin extends Authenticatable  implements JWTSubject
         'session_duration',
         'image',
         'salary',
-
     ];
 
     // public function carts()
