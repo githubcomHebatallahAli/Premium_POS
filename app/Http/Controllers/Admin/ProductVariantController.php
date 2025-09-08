@@ -147,7 +147,7 @@ $this->authorize('manage_users');
         public function edit(string $id)
         {
             $this->authorize('manage_users');
-            $ProductVariant = ProductVariant::with(['category','brand'])->find($id);
+            $ProductVariant = ProductVariant::find($id);
 
             if (!$ProductVariant) {
                 return response()->json([
