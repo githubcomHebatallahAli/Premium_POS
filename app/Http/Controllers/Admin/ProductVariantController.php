@@ -147,13 +147,15 @@ $this->authorize('manage_users');
         public function edit(string $id)
         {
             $this->authorize('manage_users');
-            $ProductVariant = ProductVariant::find($id);
+            $ProductVariant = Product::find($id);
 
             if (!$ProductVariant) {
                 return response()->json([
                     'message' => "ProductVariant not found."
                 ], 404);
             }
+            $product = Product::with(['category', 'brand', 'variants'])
+        ->find($ProductVariant->product_id);
 
             // $this->authorize('edit',$ProductVariant);
 
