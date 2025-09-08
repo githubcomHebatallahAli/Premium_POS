@@ -144,26 +144,25 @@ $this->authorize('manage_users');
 }
 
 
-        public function edit(string $id)
-        {
-            $this->authorize('manage_users');
-            $ProductVariant = ProductVariant::find($id);
+public function edit(string $id)
+{
+    $this->authorize('manage_users');
 
-            if (!$ProductVariant) {
-                return response()->json([
-                    'message' => "ProductVariant not found."
-                ], 404);
-            }
-            $product = Product::with(['category', 'brand', 'variants'])
-        ->find($ProductVariant->product_id);
+    $product = Product::with(['category', 'brand', 'variants'])
+        ->find($id);
 
-            // $this->authorize('edit',$ProductVariant);
+    if (!$product) {
+        return response()->json([
+            'message' => "Product not found."
+        ], 404);
+    }
 
-            return response()->json([
-                'data' => new ProductResource($ProductVariant),
-                'message' => "Edit ProductVariant By ID Successfully."
-            ]);
-        }
+    return response()->json([
+        'data' => new ProductResource($product),
+        'message' => "Edit Product By ID Successfully."
+    ]);
+}
+
 
 
 
