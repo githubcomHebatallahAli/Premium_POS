@@ -57,6 +57,8 @@ class Product extends Model
         ->withPivot('quantity', 'price','unitPrice', 'returnReason','endDate','product_variant_id');
     }
 
+
+
     public function invoices()
     {
         return $this->belongsToMany(Invoice::class ,'invoice_products' )
@@ -77,6 +79,10 @@ class Product extends Model
         ->withPivot('quantity','total');
     }
 
+     public function damages()
+     {
+         return $this->hasMany(DamageProduct::class);
+     }
     // public function newProducts()
     // {
     //     return $this->hasMany(Newproduct::class);

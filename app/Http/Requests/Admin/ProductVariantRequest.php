@@ -50,7 +50,7 @@ class ProductVariantRequest extends FormRequest
             'variants' => 'nullable|array',
             'variants.*.color' => 'nullable|string',
             'variants.*.size' => 'nullable|string',
-            'variants.*.clothes' => 'nullable|string',
+            'variants.*.clothes' => 'nullable|in:sm,md,lg,xl,2xl,3xl,4xl,5xl,6xl,+xl',
             'variants.*.sellingPrice' => 'nullable|numeric|min:0',
             'variants.*.images' => 'nullable|array',
             'variants.*.images.*' => 'nullable|image|mimes:jpg,jpeg,png,gif,svg',
