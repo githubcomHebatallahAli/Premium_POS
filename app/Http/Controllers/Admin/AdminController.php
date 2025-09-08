@@ -84,8 +84,12 @@ class AdminController extends Controller
             $Admin->salary = $request->salary;
         }
 
+        if ($request->filled('status')) {
+            $Admin->status = $request->status;
+        }
+
         $Admin->role_id = $request->role_id;
-        $Admin->status = $request->status;
+        // $Admin->status = $request->status;
         $Admin->save();
 
         return response()->json([
