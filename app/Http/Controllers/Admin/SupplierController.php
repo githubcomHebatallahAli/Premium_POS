@@ -18,7 +18,7 @@ class SupplierController extends Controller
         $this->authorize('manage_users');
         $searchTerm = $request->input('search', '');
 
-        $Supplier = Supplier::where('name', 'like', '%' . $searchTerm . '%')
+        $Supplier = Supplier::where('supplierName', 'like', '%' . $searchTerm . '%')
         
         ->orderBy('created_at', 'desc')
         ->paginate(10);
