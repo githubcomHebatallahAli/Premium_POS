@@ -209,6 +209,4 @@ return response()->json([
       return $this->forceDeleteModel(Invoice::class, $id);
   }
 
-
-
 }
