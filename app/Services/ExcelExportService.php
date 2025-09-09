@@ -13,7 +13,6 @@ class ExcelExportService
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
-        // كتابة العناوين
         $column = 'A';
         foreach ($headers as $header) {
             $sheet->setCellValue($column.'1', $header);
@@ -22,7 +21,6 @@ class ExcelExportService
             $column++;
         }
 
-        // كتابة البيانات
         $row = 2;
         foreach ($data as $item) {
             $column = 'A';
@@ -33,7 +31,6 @@ class ExcelExportService
             $row++;
         }
 
-        // ضبط عرض الأعمدة تلقائياً
         foreach (range('A', $column) as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
