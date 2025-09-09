@@ -151,7 +151,7 @@ class AdminController extends Controller
         if ($Admin->image) {
             Storage::disk('public')->delete($Admin->image);
         }
-        $imgPath = $request->file('image')->store('admin', 'public');
+        $imgPath = $request->file('image')->store('Admins', 'public');
         $Admin->image = $imgPath;
 
     }
