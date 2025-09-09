@@ -19,7 +19,7 @@ class Product extends Model
         'creationDate',
         'country',
         'sku',
-        'barCode',
+        'barcode',
         'description',
     ];
 
