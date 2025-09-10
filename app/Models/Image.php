@@ -12,6 +12,7 @@ class Image extends Model
     const storageFolder= 'Images';
     protected $fillable = [
         'image',
-        'name'
+        'name',
+        'creationDate'
     ];
 }
