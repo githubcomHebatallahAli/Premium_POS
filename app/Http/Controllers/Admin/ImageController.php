@@ -37,7 +37,7 @@ class ImageController extends Controller
                   ]);
     }
 
-    public function showAllCat()
+    public function showAllImage()
     {
         // $this->authorize('showAllCat',Image::class);
 
@@ -45,7 +45,7 @@ class ImageController extends Controller
 
                   return response()->json([
                       'data' =>  ImageResource::collection($Image),
-                      'message' => "Show All Image  With Products."
+                      'message' => "Show All Image."
                   ]);
     }
 
