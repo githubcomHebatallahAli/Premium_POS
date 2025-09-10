@@ -18,7 +18,7 @@ class ImageResource extends JsonResource
             'id' => $this->id,
             'image' => $this->image,
             'name' => $this->name,
-            'creationDate' => $this-> creatoinDate
+            'creationDate' => $this-> creationDate
         ];
     }
 }
