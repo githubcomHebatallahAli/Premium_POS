@@ -20,7 +20,6 @@ return new class extends Migration
             $table->string('sku')->nullable()->unique();
             $table->String('barcode')->nullable()->unique();
             $table->decimal('sellingPrice', 10, 2)->nullable();
-            $table->json('images')->nullable();
             $table->timestamp('creationDate')->nullable();
             $table->text('notes')->nullable();
             $table->softDeletes();
