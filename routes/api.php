@@ -17,4 +17,5 @@ require __DIR__ . '/Apis/Admin/withdraw.php';
 require __DIR__ . '/Apis/Admin/statistics.php';
 require __DIR__ . '/Apis/Admin/supplier.php';
 require __DIR__ . '/Apis/Admin/company.php';
+require __DIR__ . '/Apis/Admin/image.php';
 require __DIR__ . '/Apis/Excel/import&export.php';
