@@ -222,7 +222,6 @@ class ProductService
         $searchTerm = $request->input('search', '');
         $query = Product::with(['category', 'brand', 'images', 'variants.images'])
 
-        
             ->where('name', 'like', '%' . $searchTerm . '%');
 
         if ($request->filled('brand_id')) {
