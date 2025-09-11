@@ -72,9 +72,7 @@ class ProductService
         });
     }
 
-    /**
-     * Handle variants on CREATE (replace strategy + default variant if empty)
-     */
+  
     private function handleVariantsOnCreate(Product $product, ?array $variants): void
     {
         if (empty($variants)) {
@@ -87,9 +85,7 @@ class ProductService
         }
     }
 
-    /**
-     * Handle variants on UPDATE (partial update strategy)
-     */
+  
     private function handleVariantsOnUpdate(Product $product, array $variants): void
     {
         foreach ($variants as $variantData) {
@@ -179,13 +175,12 @@ class ProductService
         return Product::with(['category', 'brand', 'variants.images'])->find($id);
     }
 
-    // ✅ رجّع المنتجات المحذوفة
     public function getDeletedProducts()
     {
         return Product::onlyTrashed()->get();
     }
 
-    // ✅ استرجاع منتج محذوف
+ 
     public function restoreProduct($id): ?Product
     {
         $product = Product::withTrashed()->where('id', $id)->first();
@@ -196,13 +191,13 @@ class ProductService
         return $product;
     }
 
-    // داخل App\Services\ProductService
+   
 
 public function getAllProducts($request)
 {
     $query = Product::with(['category', 'brand', 'images', 'variants.images']);
 
-    // فلترة على مستوى المنتج
+
     if ($request->filled('brand_id')) {
         $query->where('brand_id', $request->brand_id);
     }
@@ -211,7 +206,7 @@ public function getAllProducts($request)
         $query->where('category_id', $request->category_id);
     }
 
-    // فلترة على مستوى الفاريانت (لو بعت فلتر على الفاريانت)
+    
     if ($request->filled('color') || $request->filled('size') || $request->filled('clothes')) {
         $query->whereHas('variants', function ($q) use ($request) {
             if ($request->filled('color')) {
@@ -235,7 +230,7 @@ public function getAllProducts($request)
         return ProductVariant::with(['product.category', 'product.brand', 'images'])->get();
     }
 
-    // ✅ رجّع الفاريانتس اللي كميتها <= 5
+
     public function getLowStockVariants()
     {
         return ProductVariant::with(['product.category', 'product.brand', 'images'])

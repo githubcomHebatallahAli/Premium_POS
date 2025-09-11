@@ -112,8 +112,6 @@ class ProductVariantController extends Controller
     }
 
 
-
-
     public function edit(string $id)
     {
         $this->authorize('manage_users');

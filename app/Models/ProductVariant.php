@@ -24,7 +24,7 @@ class ProductVariant extends Model
 
         public function images()
     {
-        return $this->belongsToMany(Image::class, 'variant_images');
+        return $this->belongsToMany(Image::class, 'variant_images', 'product_variant_id', 'image_id');
                     
     }
 
