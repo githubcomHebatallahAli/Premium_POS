@@ -37,9 +37,20 @@ class ProductService
                 'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s')
             ]);
 
-            if (!empty($data['image_ids'])) {
-                $this->attachProductImages($product, $data['image_ids']);
-            }
+            // if (!empty($data['image_ids'])) {
+            //     $this->attachProductImages($product, $data['image_ids']);
+            // }
+
+            if (!empty($data['images'])) {
+    $imageIds = [];
+    foreach ($data['images'] as $imageFile) {
+        $path = $imageFile->store('products', 'public');
+        $image = Image::create(['path' => $path]);
+        $imageIds[] = $image->id;
+    }
+    $product->images()->sync($imageIds);
+}
+
 
             $this->handleVariantsOnCreate($product, $data['variants'] ?? []);
 

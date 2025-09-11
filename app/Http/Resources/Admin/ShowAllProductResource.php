@@ -15,10 +15,11 @@ class ShowAllProductResource extends JsonResource
     public function toArray(Request $request): array
     {
         $totalQuantity = $this->shipments()->sum('quantity');
+        $firstImage = $this->images->first();
         return [
             "id" => $this -> id,
             "barcode" => $this -> barcode,
-            'image' => $this->image,
+            "image" => $firstImage ? $firstImage->image : null, 
             "name" => $this -> name ,
             'categoryName' => $this->category->name ?? null,
             'brandName' => $this->brand->name ?? null,
