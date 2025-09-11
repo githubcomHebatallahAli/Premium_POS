@@ -219,7 +219,11 @@ class ProductService
 
     public function getAllProducts($request)
     {
-        $query = Product::with(['category', 'brand', 'images', 'variants.images']);
+        $searchTerm = $request->input('search', '');
+        $query = Product::with(['category', 'brand', 'images', 'variants.images'])
+
+        
+            ->where('name', 'like', '%' . $searchTerm . '%');
 
         if ($request->filled('brand_id')) {
             $query->where('brand_id', $request->brand_id);
