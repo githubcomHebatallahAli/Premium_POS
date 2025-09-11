@@ -32,7 +32,7 @@ class ProductResource extends JsonResource
             'barcode' => $this->barcode,
             'sku' => $this->sku,
             'creationDate' => $this->creationDate,
-            'images' => $this->whenLoaded('images', function () {
+            'image' => $this->whenLoaded('images', function () {
                 return $this->images->map(fn($img) => [
                     'id' => $img->id,
                     'name' => $img->name,
