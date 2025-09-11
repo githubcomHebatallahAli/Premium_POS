@@ -101,34 +101,40 @@ class ProductService
 
     private function handleVariantsOnUpdate(Product $product, array $variants): void
     {
+        $sentIds = collect($variants)->pluck('id')->filter()->all();
+
+        // احذف الفاريانتات التي لم يتم إرسالها في الريكوست
+        if (!empty($sentIds)) {
+            $product->variants()->whereNotIn('id', $sentIds)->delete();
+        } else {
+            $product->variants()->delete();
+        }
+
+        // عدّل أو أنشئ الفاريانتات
         foreach ($variants as $variantData) {
             if (!empty($variantData['id'])) {
                 $variant = ProductVariant::find($variantData['id']);
                 if (!$variant) {
-                    throw new ModelNotFoundException("Variant not found: {$variantData['id']}");
+                    continue;
                 }
-
-                $variant->update([
+                $updateData = [
                     'color'        => $variantData['color'] ?? $variant->color,
                     'size'         => $variantData['size'] ?? $variant->size,
                     'clothes'      => $variantData['clothes'] ?? $variant->clothes,
                     'sellingPrice' => $variantData['sellingPrice'] ?? $variant->sellingPrice,
                     'sku'          => $variantData['sku'] ?? $variant->sku,
-                    'barcode'      => $variantData['barcode'] ?? $variant->barcode,
                     'notes'        => $variantData['notes'] ?? $variant->notes,
-                ]);
-
-                if (!empty($variantData['images'])) {
-                    $imageIds = [];
-                    foreach ($variantData['images'] as $imageFile) {
-                        $filename = uniqid() . '.' . $imageFile->getClientOriginalExtension();
-                        $imageFile->move(public_path('products'), $filename);
-                        $image = Image::create(['path' => 'products/' . $filename]);
-                        $imageIds[] = $image->id;
-                    }
-                    $this->attachVariantImages($variant, $imageIds);
+                ];
+                if (!isset($variantData['barcode']) || trim($variantData['barcode']) === '') {
+                    $updateData['barcode'] = $variant->barcode;
+                } else {
+                    $updateData['barcode'] = $variantData['barcode'];
                 }
+                $variant->update($updateData);
             } else {
+                if (!isset($variantData['barcode']) || trim($variantData['barcode']) === '') {
+                    $variantData['barcode'] = $product->barcode . '-' . Str::upper(Str::random(4));
+                }
                 $this->createVariant($product, $variantData);
             }
         }
