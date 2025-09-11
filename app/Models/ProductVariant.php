@@ -35,7 +35,4 @@ class ProductVariant extends Model
 
     
 
-    protected $casts = [
-        'images' => 'array',
-    ];
 }
