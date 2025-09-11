@@ -7,7 +7,6 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ProductService
@@ -37,21 +36,19 @@ class ProductService
                 'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s')
             ]);
 
-            // if (!empty($data['image_ids'])) {
-            //     $this->attachProductImages($product, $data['image_ids']);
-            // }
-
+            // صور المنتج
             if (!empty($data['images'])) {
-    $imageIds = [];
-    foreach ($data['images'] as $imageFile) {
-        $path = $imageFile->store('products', 'public');
-        $image = Image::create(['path' => $path]);
-        $imageIds[] = $image->id;
-    }
-    $product->images()->sync($imageIds);
-}
+                $imageIds = [];
+                foreach ($data['images'] as $imageFile) {
+                    $filename = uniqid() . '.' . $imageFile->getClientOriginalExtension();
+                    $imageFile->move(public_path('products'), $filename);
+                    $image = Image::create(['path' => 'products/' . $filename]);
+                    $imageIds[] = $image->id;
+                }
+                $product->images()->sync($imageIds);
+            }
 
-
+            // الفاريانت
             $this->handleVariantsOnCreate($product, $data['variants'] ?? []);
 
             return $product->load(['category', 'brand', 'images', 'variants.images']);
@@ -71,8 +68,15 @@ class ProductService
                 'barcode'      => $data['barcode'] ?? $product->barcode,
             ]);
 
-            if (isset($data['image_ids'])) {
-                $this->attachProductImages($product, $data['image_ids']);
+            if (!empty($data['images'])) {
+                $imageIds = [];
+                foreach ($data['images'] as $imageFile) {
+                    $filename = uniqid() . '.' . $imageFile->getClientOriginalExtension();
+                    $imageFile->move(public_path('products'), $filename);
+                    $image = Image::create(['path' => 'products/' . $filename]);
+                    $imageIds[] = $image->id;
+                }
+                $this->attachProductImages($product, $imageIds);
             }
 
             if (isset($data['variants'])) {
@@ -83,7 +87,6 @@ class ProductService
         });
     }
 
-  
     private function handleVariantsOnCreate(Product $product, ?array $variants): void
     {
         if (empty($variants)) {
@@ -96,7 +99,6 @@ class ProductService
         }
     }
 
-  
     private function handleVariantsOnUpdate(Product $product, array $variants): void
     {
         foreach ($variants as $variantData) {
@@ -116,8 +118,15 @@ class ProductService
                     'notes'        => $variantData['notes'] ?? $variant->notes,
                 ]);
 
-                if (isset($variantData['image_ids'])) {
-                    $this->attachVariantImages($variant, $variantData['image_ids']);
+                if (!empty($variantData['images'])) {
+                    $imageIds = [];
+                    foreach ($variantData['images'] as $imageFile) {
+                        $filename = uniqid() . '.' . $imageFile->getClientOriginalExtension();
+                        $imageFile->move(public_path('products'), $filename);
+                        $image = Image::create(['path' => 'products/' . $filename]);
+                        $imageIds[] = $image->id;
+                    }
+                    $this->attachVariantImages($variant, $imageIds);
                 }
             } else {
                 $this->createVariant($product, $variantData);
@@ -139,8 +148,15 @@ class ProductService
             'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s')
         ]);
 
-        if (!empty($variantData['image_ids'])) {
-            $this->attachVariantImages($variant, $variantData['image_ids']);
+        if (!empty($variantData['images'])) {
+            $imageIds = [];
+            foreach ($variantData['images'] as $imageFile) {
+                $filename = uniqid() . '.' . $imageFile->getClientOriginalExtension();
+                $imageFile->move(public_path('products'), $filename);
+                $image = Image::create(['path' => 'products/' . $filename]);
+                $imageIds[] = $image->id;
+            }
+            $this->attachVariantImages($variant, $imageIds);
         }
 
         return $variant;
@@ -181,7 +197,7 @@ class ProductService
         return implode('-', $skuParts) . '-' . $random;
     }
 
-       public function getProductById($id): ?Product
+    public function getProductById($id): ?Product
     {
         return Product::with(['category', 'brand', 'variants.images'])->find($id);
     }
@@ -191,7 +207,6 @@ class ProductService
         return Product::onlyTrashed()->get();
     }
 
- 
     public function restoreProduct($id): ?Product
     {
         $product = Product::withTrashed()->where('id', $id)->first();
@@ -202,45 +217,39 @@ class ProductService
         return $product;
     }
 
-   
+    public function getAllProducts($request)
+    {
+        $query = Product::with(['category', 'brand', 'images', 'variants.images']);
 
-public function getAllProducts($request)
-{
-    $query = Product::with(['category', 'brand', 'images', 'variants.images']);
+        if ($request->filled('brand_id')) {
+            $query->where('brand_id', $request->brand_id);
+        }
 
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
 
-    if ($request->filled('brand_id')) {
-        $query->where('brand_id', $request->brand_id);
+        if ($request->filled('color') || $request->filled('size') || $request->filled('clothes')) {
+            $query->whereHas('variants', function ($q) use ($request) {
+                if ($request->filled('color')) {
+                    $q->where('color', $request->color);
+                }
+                if ($request->filled('size')) {
+                    $q->where('size', $request->size);
+                }
+                if ($request->filled('clothes')) {
+                    $q->where('clothes', $request->clothes);
+                }
+            });
+        }
+
+        return $query->orderBy('created_at', 'desc')->paginate(10);
     }
-
-    if ($request->filled('category_id')) {
-        $query->where('category_id', $request->category_id);
-    }
-
-    
-    if ($request->filled('color') || $request->filled('size') || $request->filled('clothes')) {
-        $query->whereHas('variants', function ($q) use ($request) {
-            if ($request->filled('color')) {
-                $q->where('color', $request->color);
-            }
-            if ($request->filled('size')) {
-                $q->where('size', $request->size);
-            }
-            if ($request->filled('clothes')) {
-                $q->where('clothes', $request->clothes);
-            }
-        });
-    }
-
-    return $query->orderBy('created_at', 'desc')->paginate(10);
-}
-
 
     public function getAllProductVariants()
     {
         return ProductVariant::with(['product.category', 'product.brand', 'images'])->get();
     }
-
 
     public function getLowStockVariants()
     {
@@ -248,5 +257,5 @@ public function getAllProducts($request)
             ->where('quantity', '<=', 5)
             ->get();
     }
-
 }
+     
