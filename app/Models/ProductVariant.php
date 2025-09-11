@@ -18,10 +18,15 @@ class ProductVariant extends Model
         'sku',
         'barcode',
         'sellingPrice',
-        'images',
         'creationDate',
         'notes',
     ];
+
+        public function images()
+    {
+        return $this->belongsToMany(Image::class, 'variant_images');
+                    
+    }
 
     public function product()
     {

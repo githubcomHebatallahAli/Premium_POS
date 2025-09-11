@@ -7,11 +7,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class ProductVariantResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
+  
     public function toArray(Request $request): array
     {
         return [
@@ -20,11 +16,19 @@ class ProductVariantResource extends JsonResource
             'size' => $this->size,
             'clothes' => $this->clothes,
             'sellingPrice' => $this->sellingPrice,
-            'images' => $this->images,
             'sku' => $this->sku,
             'barcode' => $this->barcode,
             'notes' => $this->notes,
-            'creationDate' => $this->creationDate
+            'creationDate' => $this->creationDate,
+               'images'      => $this->whenLoaded('images', function () {
+                return $this->images->map(fn($img) => [
+                    'id' => $img->id,
+                    'name' => $img->name,
+                    'image' => $img->image,
+                    
+                ]);
+            }),
+
         ];
     }
 }

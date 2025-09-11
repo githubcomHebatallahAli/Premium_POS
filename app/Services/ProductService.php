@@ -2,173 +2,81 @@
 
 namespace App\Services;
 
+use App\Models\Image;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ProductService
 {
-    public function createProduct(array $data, $mainImage = null)
+    private function attachProductImages(Product $product, array $imageIds): void
     {
-        $mainImagePath = $this->uploadMainImage($mainImage);
-
-        $product = Product::create([
-            'name' => $data['name'],
-            'sellingPrice' => $data['sellingPrice'],
-            'mainImage' => $mainImagePath,
-            'category_id' => $data['category_id'],
-            'brand_id' => $data['brand_id'] ?? null,
-            'description' => $data['description'] ?? null,
-            'country' => $data['country'] ?? null,
-            'barcode' => $data['barcode'] ?? null,
-            'sku' => $this->generateProductSku($data['name']),
-            'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s')
-        ]);
-
-        $this->handleVariants($product, $data['variants'] ?? []);
-
-        return $product->load(['category', 'brand', 'variants']);
+        $product->images()->sync($imageIds);
     }
 
-public function updateProduct(Product $product, array $data, $mainImage = null)
-{
-    $updateData = [
-        'name'        => $data['name'],
-        'sellingPrice'=> $data['sellingPrice'],
-        'category_id' => $data['category_id'],
-        'brand_id'    => $data['brand_id'] ?? null,
-        'description' => $data['description'] ?? null,
-        'country'     => $data['country'] ?? null,
-        'barcode'     => $data['barcode'] ?? null,
-        'sku' => $data['name'] !== $product->name
-            ? $this->generateProductSku($data['name'])
-            : $product->sku,
-    ];
-
-    if ($mainImage) {
-        $this->deleteMainImage($product->mainImage);
-        $updateData['mainImage'] = $this->uploadMainImage($mainImage);
+    private function attachVariantImages(ProductVariant $variant, array $imageIds): void
+    {
+        $variant->images()->sync($imageIds);
     }
 
-    $product->update($updateData);
+    public function createProduct(array $data): Product
+    {
+        return DB::transaction(function () use ($data) {
+            $product = Product::create([
+                'name'         => $data['name'],
+                'sellingPrice' => $data['sellingPrice'],
+                'category_id'  => $data['category_id'],
+                'brand_id'     => $data['brand_id'] ?? null,
+                'description'  => $data['description'] ?? null,
+                'country'      => $data['country'] ?? null,
+                'barcode'      => $data['barcode'] ?? null,
+                'sku'          => $this->generateProductSku($data['name']),
+                'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s')
+            ]);
 
-    $this->updateVariants($product, $data['variants'] ?? []);
-
-    return $product->load(['category', 'brand', 'variants']);
-}
-
-private function updateVariants(Product $product, array $variants)
-{
-    $existingVariants = $product->variants()->get();
-
-    $existingIds = collect($variants)->pluck('id')->filter()->toArray();
-    $product->variants()->whereNotIn('id', $existingIds)->delete();
-
-    foreach ($variants as $variantData) {
-        if (isset($variantData['id'])) {
-            $variant = $existingVariants->firstWhere('id', $variantData['id']);
-
-            if ($variant) {
-                $sku = $variant->sku;
-
-                if (
-                    ($variantData['color'] ?? null) !== $variant->color ||
-                    ($variantData['size'] ?? null) !== $variant->size ||
-                    ($variantData['clothes'] ?? null) !== $variant->clothes
-                ) {
-                    $sku = $this->generateVariantSku($product, $variantData);
-                }
-
-                $variant->update([
-                    'color'        => $variantData['color'] ?? null,
-                    'size'         => $variantData['size'] ?? null,
-                    'clothes'      => $variantData['clothes'] ?? null,
-                    'sellingPrice' => $variantData['sellingPrice'] ?? $product->sellingPrice,
-                    'images'       => $this->uploadVariantImages($variantData['images'] ?? []),
-                    'sku'          => $sku,
-                    'barcode'      => $variantData['barcode'] ?? $variant->barcode,
-                    'notes'        => $variantData['notes'] ?? null,
-                ]);
+            if (!empty($data['image_ids'])) {
+                $this->attachProductImages($product, $data['image_ids']);
             }
-        } else {
 
-            $this->createVariant($product, $variantData);
-        }
-    }
-}
+            $this->handleVariantsOnCreate($product, $data['variants'] ?? []);
 
-
-
-    private function createVariant(Product $product, array $variantData)
-    {
-        $imagesPaths = $this->uploadVariantImages($variantData['images'] ?? []);
-
-        ProductVariant::create([
-            'product_id' => $product->id,
-            'color' => $variantData['color'] ?? null,
-            'size' => $variantData['size'] ?? null,
-            'clothes' => $variantData['clothes'] ?? null,
-            'sellingPrice' => $variantData['sellingPrice'] ?? $product->sellingPrice,
-            'images' => $imagesPaths,
-            'sku' => $this->generateVariantSku($product, $variantData),
-            'barcode' => $variantData['barcode'] ?? null,
-            'notes' => $variantData['notes'] ?? null,
-            'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s')
-        ]);
+            return $product->load(['category', 'brand', 'images', 'variants.images']);
+        });
     }
 
-    private function uploadMainImage($image)
+    public function updateProduct(Product $product, array $data): Product
     {
-        if (!$image) return null;
-        return $image->store('products/main', 'public');
+        return DB::transaction(function () use ($product, $data) {
+            $product->update([
+                'name'         => $data['name'] ?? $product->name,
+                'sellingPrice' => $data['sellingPrice'] ?? $product->sellingPrice,
+                'category_id'  => $data['category_id'] ?? $product->category_id,
+                'brand_id'     => $data['brand_id'] ?? $product->brand_id,
+                'description'  => $data['description'] ?? $product->description,
+                'country'      => $data['country'] ?? $product->country,
+                'barcode'      => $data['barcode'] ?? $product->barcode,
+            ]);
+
+            if (isset($data['image_ids'])) {
+                $this->attachProductImages($product, $data['image_ids']);
+            }
+
+            if (isset($data['variants'])) {
+                $this->handleVariantsOnUpdate($product, $data['variants']);
+            }
+
+            return $product->load(['category', 'brand', 'images', 'variants.images']);
+        });
     }
 
-    private function uploadVariantImages(array $images)
+    /**
+     * Handle variants on CREATE (replace strategy + default variant if empty)
+     */
+    private function handleVariantsOnCreate(Product $product, ?array $variants): void
     {
-        $paths = [];
-        foreach ($images as $image) {
-            $paths[] = $image->store('products/variants', 'public');
-        }
-        return $paths;
-    }
-
-    private function deleteMainImage($imagePath)
-    {
-        if ($imagePath) {
-            Storage::disk('public')->delete($imagePath);
-        }
-    }
-
-private function generateProductSku($name)
-{
-    $random = Str::upper(Str::random(4)); 
-    return $name . '-' . $random;
-}
-
-
-private function generateVariantSku(Product $product, array $variantData)
-{
-    $base = $product->name; 
-    $color = $variantData['color'] ?? null;
-    $size = $variantData['size'] ?? null;
-    $clothes = $variantData['clothes'] ?? null;
-    $random = Str::upper(Str::random(4));
-
-    $skuParts = [$base];
-
-    if ($color) $skuParts[] = $color;
-    if ($size) $skuParts[] = $size;
-    if ($clothes) $skuParts[] = $clothes;
-
-    return implode('-', $skuParts) . '-' . $random;
-}
-
-
-    private function handleVariants(Product $product, array $variants)
-    {
-        $product->variants()->delete();
-        
         if (empty($variants)) {
             $this->createDefaultVariant($product);
             return;
@@ -179,16 +87,160 @@ private function generateVariantSku(Product $product, array $variantData)
         }
     }
 
-    private function createDefaultVariant(Product $product)
+    /**
+     * Handle variants on UPDATE (partial update strategy)
+     */
+    private function handleVariantsOnUpdate(Product $product, array $variants): void
+    {
+        foreach ($variants as $variantData) {
+            if (!empty($variantData['id'])) {
+                $variant = ProductVariant::find($variantData['id']);
+                if (!$variant) {
+                    throw new ModelNotFoundException("Variant not found: {$variantData['id']}");
+                }
+
+                $variant->update([
+                    'color'        => $variantData['color'] ?? $variant->color,
+                    'size'         => $variantData['size'] ?? $variant->size,
+                    'clothes'      => $variantData['clothes'] ?? $variant->clothes,
+                    'sellingPrice' => $variantData['sellingPrice'] ?? $variant->sellingPrice,
+                    'sku'          => $variantData['sku'] ?? $variant->sku,
+                    'barcode'      => $variantData['barcode'] ?? $variant->barcode,
+                    'notes'        => $variantData['notes'] ?? $variant->notes,
+                ]);
+
+                if (isset($variantData['image_ids'])) {
+                    $this->attachVariantImages($variant, $variantData['image_ids']);
+                }
+            } else {
+                $this->createVariant($product, $variantData);
+            }
+        }
+    }
+
+    private function createVariant(Product $product, array $variantData): ProductVariant
+    {
+        $variant = ProductVariant::create([
+            'product_id'   => $product->id,
+            'color'        => $variantData['color'] ?? null,
+            'size'         => $variantData['size'] ?? null,
+            'clothes'      => $variantData['clothes'] ?? null,
+            'sellingPrice' => $variantData['sellingPrice'] ?? $product->sellingPrice,
+            'sku'          => $variantData['sku'] ?? $this->generateVariantSku($product, $variantData),
+            'barcode'      => $variantData['barcode'] ?? null,
+            'notes'        => $variantData['notes'] ?? null,
+            'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s')
+        ]);
+
+        if (!empty($variantData['image_ids'])) {
+            $this->attachVariantImages($variant, $variantData['image_ids']);
+        }
+
+        return $variant;
+    }
+
+    private function createDefaultVariant(Product $product): void
     {
         ProductVariant::create([
-            'product_id' => $product->id,
+            'product_id'   => $product->id,
             'sellingPrice' => $product->sellingPrice,
-            // 'images' => [],
-            'sku' => $product->sku . '-DEFAULT',
-            'barcode' => $product->barcode,
-            'notes' => 'منتج بدون تفرعات',
+            'sku'          => $product->sku . '-DEFAULT',
+            'barcode'      => $product->barcode,
+            'notes'        => 'منتج بدون تفرعات',
             'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s')
         ]);
     }
+
+    private function generateProductSku(string $name): string
+    {
+        $random = Str::upper(Str::random(4));
+        return $name . '-' . $random;
+    }
+
+    private function generateVariantSku(Product $product, array $variantData): string
+    {
+        $base = $product->name;
+        $color = $variantData['color'] ?? null;
+        $size = $variantData['size'] ?? null;
+        $clothes = $variantData['clothes'] ?? null;
+        $random = Str::upper(Str::random(4));
+
+        $skuParts = [$base];
+
+        if ($color) $skuParts[] = $color;
+        if ($size) $skuParts[] = $size;
+        if ($clothes) $skuParts[] = $clothes;
+
+        return implode('-', $skuParts) . '-' . $random;
+    }
+
+       public function getProductById($id): ?Product
+    {
+        return Product::with(['category', 'brand', 'variants.images'])->find($id);
+    }
+
+    // ✅ رجّع المنتجات المحذوفة
+    public function getDeletedProducts()
+    {
+        return Product::onlyTrashed()->get();
+    }
+
+    // ✅ استرجاع منتج محذوف
+    public function restoreProduct($id): ?Product
+    {
+        $product = Product::withTrashed()->where('id', $id)->first();
+        if (!$product) {
+            return null;
+        }
+        $product->restore();
+        return $product;
+    }
+
+    // داخل App\Services\ProductService
+
+public function getAllProducts($request)
+{
+    $query = Product::with(['category', 'brand', 'images', 'variants.images']);
+
+    // فلترة على مستوى المنتج
+    if ($request->filled('brand_id')) {
+        $query->where('brand_id', $request->brand_id);
+    }
+
+    if ($request->filled('category_id')) {
+        $query->where('category_id', $request->category_id);
+    }
+
+    // فلترة على مستوى الفاريانت (لو بعت فلتر على الفاريانت)
+    if ($request->filled('color') || $request->filled('size') || $request->filled('clothes')) {
+        $query->whereHas('variants', function ($q) use ($request) {
+            if ($request->filled('color')) {
+                $q->where('color', $request->color);
+            }
+            if ($request->filled('size')) {
+                $q->where('size', $request->size);
+            }
+            if ($request->filled('clothes')) {
+                $q->where('clothes', $request->clothes);
+            }
+        });
+    }
+
+    return $query->orderBy('created_at', 'desc')->paginate(10);
+}
+
+
+    public function getAllProductVariants()
+    {
+        return ProductVariant::with(['product.category', 'product.brand', 'images'])->get();
+    }
+
+    // ✅ رجّع الفاريانتس اللي كميتها <= 5
+    public function getLowStockVariants()
+    {
+        return ProductVariant::with(['product.category', 'product.brand', 'images'])
+            ->where('quantity', '<=', 5)
+            ->get();
+    }
+
 }

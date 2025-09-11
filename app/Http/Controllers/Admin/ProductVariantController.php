@@ -29,8 +29,7 @@ class ProductVariantController extends Controller
     {
         try {
             $product = $this->productService->createProduct(
-                $request->validated(),
-                $request->file('mainImage')
+                $request->validated()
             );
 
             return response()->json([
@@ -45,14 +44,14 @@ class ProductVariantController extends Controller
         }
     }
 
-    public function update(ProductVariantRequest $request, $id)
+   public function update(ProductVariantRequest $request, $id)
     {
         try {
             $product = Product::findOrFail($id);
+
             $updatedProduct = $this->productService->updateProduct(
                 $product,
-                $request->validated(),
-                $request->file('mainImage')
+                $request->validated()
             );
 
             return response()->json([
@@ -67,129 +66,105 @@ class ProductVariantController extends Controller
         }
     }
     
-            public function showAll(Request $request)
+    public function showAll(Request $request)
     {
-        // $this->authorize('showAll',ProductVariant::class);
-          $this->authorize('manage_users');
-      
-        $ProductVariant = Product::with(['category','brand','variants']);
-        
-    $query = ProductVariant::query();
+        $this->authorize('manage_users');
 
-    if ($request->filled('brand_id')) {
-        $query->where('brand_id', $request->brand_id);
-    }
-
-    if ($request->filled('category_id')) {
-        $query->where('category_id', $request->category_id);
-    }
-    if ($request->filled('color')) {
-        $query->where('color', $request->color);
-    }
-    if ($request->filled('size')) {
-        $query->where('size', $request->size);
-    }
-
-    if ($request->filled('clothes')) {
-        $query->where('clothes', $request->clothes);
-    }
-
-  
-
-
-        $ProductVariant = $ProductVariant->orderBy('created_at', 'desc')
-                           ->paginate(10);
+        $products = $this->productService->getAllProducts($request);
 
         return response()->json([
-            'data' => ShowAllProductResource::collection($ProductVariant),
+            'data' => ShowAllProductResource::collection($products),
             'pagination' => [
-                'total' => $ProductVariant->total(),
-                'count' => $ProductVariant->count(),
-                'per_page' => $ProductVariant->perPage(),
-                'current_page' => $ProductVariant->currentPage(),
-                'total_pages' => $ProductVariant->lastPage(),
-                'next_page_url' => $ProductVariant->nextPageUrl(),
-                'prev_page_url' => $ProductVariant->previousPageUrl(),
+                'total' => $products->total(),
+                'count' => $products->count(),
+                'per_page' => $products->perPage(),
+                'current_page' => $products->currentPage(),
+                'total_pages' => $products->lastPage(),
+                'next_page_url' => $products->nextPageUrl(),
+                'prev_page_url' => $products->previousPageUrl(),
             ],
-            'message' => "Show All ProductVariants."
+            'message' => "Show All Products."
         ]);
     }
 
     public function showAllProductVariant()
     {
-          $this->authorize('manage_users');
-        // $this->authorize('showAllProductVariant',ProductVariant::class);
+        $this->authorize('manage_users');
 
-        $ProductVariant = ProductVariant::with(['category','brand','variants'])->get();
+        $variants = $this->productService->getAllProductVariants();
 
         return response()->json([
-            'data' => ShowAllProductResource::collection($ProductVariant),
+            'data' => ShowAllProductResource::collection($variants),
             'message' => "Show All ProductVariants."
         ]);
     }
 
-    public function showProductVariantLessThan5()
-{
-    // $this->authorize('showProductVariantLessThan5', ProductVariant::class);
-$this->authorize('manage_users');
-    $ProductVariants = ProductVariant::with(['category', 'brand', 'variants'])
-                        ->where('quantity', '<=', 5)
-                        ->get();
+        public function showProductVariantLessThan5()
+    {
+        $this->authorize('manage_users');
 
-    return response()->json([
-        'data' => ShowAllProductResource::collection($ProductVariants),
-        'message' => "Show All ProductVariants with quantity <= 5."
-    ]);
-}
+        $variants = $this->productService->getLowStockVariants();
 
-
-public function edit(string $id)
-{
-    $this->authorize('manage_users');
-
-    $product = Product::with(['category', 'brand', 'variants'])
-        ->find($id);
-
-    if (!$product) {
         return response()->json([
-            'message' => "Product not found."
-        ], 404);
+            'data' => ShowAllProductResource::collection($variants),
+            'message' => "Show All ProductVariants with quantity <= 5."
+        ]);
     }
 
-    return response()->json([
-        'data' => new ProductResource($product),
-        'message' => "Edit Product By ID Successfully."
-    ]);
-}
+
+
+
+    public function edit(string $id)
+    {
+        $this->authorize('manage_users');
+
+        $product = $this->productService->getProductById($id);
+
+        if (!$product) {
+            return response()->json([
+                'message' => "Product not found."
+            ], 404);
+        }
+
+        return response()->json([
+            'data' => new ProductResource($product),
+            'message' => "Edit Product By ID Successfully."
+        ]);
+    }
 
     public function destroy(string $id){
 
     return $this->destroyModel(Product::class, ProductResource::class, $id);
     }
 
-    public function showDeleted(){
+    public function showDeleted()
+    {
         $this->authorize('manage_users');
-    $ProductVariants=Product::onlyTrashed()->get();
-    return response()->json([
-        'data' =>ProductResource::collection($ProductVariants),
-        'message' => "Show Deleted ProductVariants Successfully."
-    ]);
+
+        $products = $this->productService->getDeletedProducts();
+
+        return response()->json([
+            'data' => ProductResource::collection($products),
+            'message' => "Show Deleted Products Successfully."
+        ]);
     }
 
     public function restore(string $id)
     {
-       $this->authorize('manage_users');
-    $ProductVariant = Product::withTrashed()->where('id', $id)->first();
-    if (!$ProductVariant) {
+        $this->authorize('manage_users');
+
+        $product = $this->productService->restoreProduct($id);
+
+        if (!$product) {
+            return response()->json([
+                'message' => "Product not found."
+            ], 404);
+        }
+
         return response()->json([
-            'message' => "ProductVariant not found."
-        ], 404);
-    }
-    $ProductVariant->restore();
-    return response()->json([
-        'data' =>new ProductResource($ProductVariant),
-        'message' => "Restore ProductVariant By Id Successfully."
-    ]);
+            'data' => new ProductResource($product),
+            'message' => "Restore Product By Id Successfully."
+        ]);
     }
 
     public function forceDelete(string $id){

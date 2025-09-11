@@ -26,24 +26,25 @@ class ProductVariantRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'sellingPrice' => 'required|numeric|min:0',
-            'mainImage.*'=>'nullable|image|mimes:jpg,jpeg,png,gif,svg',
             'category_id' => 'required|exists:categories,id',
             'brand_id' => 'nullable|exists:brands,id',
             'description' => 'nullable|string',
             'country' => 'nullable|string',
             'barcode' => 'nullable|string|unique:products,barcode',
             'sku' => 'nullable|string|unique:products,sku,'.$this->id,
+            'image_ids'   => 'nullable|array',
+            'image_ids.*' => 'exists:images,id',
             
             'variants' => 'nullable|array',
             'variants.*.color' => 'nullable|string',
             'variants.*.size' => 'nullable|string',
             'variants.*.clothes' => 'nullable|in:sm,md,lg,xl,2xl,3xl,4xl,5xl,6xl,+xl',
             'variants.*.sellingPrice' => 'nullable|numeric|min:0',
-            'variants.*.images' => 'nullable|array',
-            'variants.*.images.*' => 'nullable|image|mimes:jpg,jpeg,png,gif,svg',
             'variants.*.barcode' => 'nullable|string|unique:product_variants,barcode',
             'variants.*.sku' => 'nullable|string|unique:product_variants,sku',
-            'variants.*.notes' => 'nullable|string'
+            'variants.*.notes' => 'nullable|string',
+             'variants.*.image_ids'   => 'nullable|array',
+            'variants.*.image_ids.*' => 'exists:images,id',
         ];
     }
 

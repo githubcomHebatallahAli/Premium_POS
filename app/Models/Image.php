@@ -15,4 +15,15 @@ class Image extends Model
         'name',
         'creationDate'
     ];
+
+        public function products()
+    {
+        return $this->belongsToMany(Product::class, 'product_images');
+                    
+    }
+        public function productVariants()
+    {
+        return $this->belongsToMany(ProductVariant::class, 'variant_images');
+                    
+    }
 }

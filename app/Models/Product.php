@@ -15,13 +15,20 @@ class Product extends Model
         'brand_id',
         'name',
         'sellingPrice',
-        'mainImage',
         'creationDate',
         'country',
         'sku',
         'barcode',
         'description',
     ];
+
+            public function images()
+    {
+        return $this->belongsToMany(Image::class, 'product_images');
+                    
+    }
+
+
 
     protected static function boote()
     {

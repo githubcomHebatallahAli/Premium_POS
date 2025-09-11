@@ -3,7 +3,7 @@
 namespace App\Http\Resources\Admin;
 
 use Illuminate\Http\Request;
-use App\Http\Resources\ImageResource;
+
 use Illuminate\Http\Resources\Json\JsonResource;
 
 
@@ -15,7 +15,6 @@ class ProductResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'sellingPrice' => $this->sellingPrice,
-            'mainImage' => $this->mainImage ,
             'category' => $this->whenLoaded('category', function () {
                 return [
                     'id' => $this->category->id,
@@ -33,6 +32,14 @@ class ProductResource extends JsonResource
             'barcode' => $this->barcode,
             'sku' => $this->sku,
             'creationDate' => $this->creationDate,
+            'images' => $this->whenLoaded('images', function () {
+                return $this->images->map(fn($img) => [
+                    'id' => $img->id,
+                    'name' => $img->name,
+                    'image' => $img->image,
+                    
+                ]);
+            }),
         ];
 
         if ($this->hasRealVariants()) {
