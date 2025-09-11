@@ -140,7 +140,7 @@ class ProductService
     //     }
     // }
 
-    private function handleVariantsOnUpdate(Product $product, array $variants): void
+private function handleVariantsOnUpdate(Product $product, array $variants): void
 {
     $sentIds = collect($variants)->pluck('id')->filter()->all();
     $product->variants()->whereNotIn('id', $sentIds)->delete();
@@ -152,22 +152,31 @@ class ProductService
                 throw new ModelNotFoundException("Variant not found: {$variantData['id']}");
             }
 
-            // تحديث البيانات مع معالجة الباركود بشكل صحيح
+            // تحضير مصفوفة التحديث
             $updateData = [
                 'color'        => $variantData['color'] ?? $variant->color,
                 'size'         => $variantData['size'] ?? $variant->size,
                 'clothes'      => $variantData['clothes'] ?? $variant->clothes,
                 'sellingPrice' => $variantData['sellingPrice'] ?? $variant->sellingPrice,
+                'sku'          => $variantData['sku'] ?? $variant->sku,
                 'notes'        => $variantData['notes'] ?? $variant->notes,
             ];
 
-            // معالجة الباركود: فقط إذا تم تقديمه وقيمته ليست null
-            if (array_key_exists('barcode', $variantData) && $variantData['barcode'] !== null) {
-                $updateData['barcode'] = $variantData['barcode'];
+            // معالجة خاصة للباركود: لا يتم التحديث إلا إذا تم إرسال قيمة جديدة وغير فارغة
+            if (array_key_exists('barcode', $variantData)) {
+                if ($variantData['barcode'] !== null) {
+                    // إذا تم إرسال باركود جديد وقيمته ليست null، نستخدمه
+                    $updateData['barcode'] = $variantData['barcode'];
+                }
+                // إذا كان null، لا نفعله شيئًا (أي نحتفظ بالباركود القديم ضمنيًا)
+            } else {
+                // إذا لم يتم إرسال حقل الباركود أساسًا في البيانات، نحتفظ بالباركود القديم
+                $updateData['barcode'] = $variant->barcode;
             }
 
             $variant->update($updateData);
 
+            // معالجة الصور (إذا وجدت)
             if (!empty($variantData['images'])) {
                 $imageIds = [];
                 foreach ($variantData['images'] as $imageFile) {
@@ -179,6 +188,7 @@ class ProductService
                 $this->attachVariantImages($variant, $imageIds);
             }
         } else {
+            // إنشاء فاريانت جديد إذا لم يكن له ID
             $this->createVariant($product, $variantData);
         }
     }
