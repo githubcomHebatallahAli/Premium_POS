@@ -248,7 +248,7 @@ class ProductService
 
     public function getAllProductVariants()
     {
-        return ProductVariant::with(['product.category', 'product.brand', 'images'])->get();
+        return Product::with(['category', 'brand', 'images'])->get();
     }
 
     public function getLowStockVariants()
