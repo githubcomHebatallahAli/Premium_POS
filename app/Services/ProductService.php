@@ -38,14 +38,19 @@ class ProductService
 
             // صور المنتج
             if (!empty($data['images'])) {
-                $imageIds = [];
-                foreach ($data['images'] as $imageFile) {
-                    $filename = uniqid() . '.' . $imageFile->getClientOriginalExtension();
-                    $imageFile->move(public_path('products'), $filename);
-                    $image = Image::create(['path' => 'products/' . $filename]);
-                    $imageIds[] = $image->id;
+                // إذا كانت الصور عبارة عن ids
+                if (is_array($data['images']) && is_numeric($data['images'][0])) {
+                    $product->images()->sync($data['images']);
+                } else {
+                    $imageIds = [];
+                    foreach ($data['images'] as $imageFile) {
+                        $filename = uniqid() . '.' . $imageFile->getClientOriginalExtension();
+                        $imageFile->move(public_path('products'), $filename);
+                        $image = Image::create(['path' => 'products/' . $filename]);
+                        $imageIds[] = $image->id;
+                    }
+                    $product->images()->sync($imageIds);
                 }
-                $product->images()->sync($imageIds);
             }
 
             // الفاريانت
@@ -155,14 +160,19 @@ class ProductService
         ]);
 
         if (!empty($variantData['images'])) {
-            $imageIds = [];
-            foreach ($variantData['images'] as $imageFile) {
-                $filename = uniqid() . '.' . $imageFile->getClientOriginalExtension();
-                $imageFile->move(public_path('products'), $filename);
-                $image = Image::create(['path' => 'products/' . $filename]);
-                $imageIds[] = $image->id;
+            // إذا كانت الصور عبارة عن ids
+            if (is_array($variantData['images']) && is_numeric($variantData['images'][0])) {
+                $this->attachVariantImages($variant, $variantData['images']);
+            } else {
+                $imageIds = [];
+                foreach ($variantData['images'] as $imageFile) {
+                    $filename = uniqid() . '.' . $imageFile->getClientOriginalExtension();
+                    $imageFile->move(public_path('products'), $filename);
+                    $image = Image::create(['path' => 'products/' . $filename]);
+                    $imageIds[] = $image->id;
+                }
+                $this->attachVariantImages($variant, $imageIds);
             }
-            $this->attachVariantImages($variant, $imageIds);
         }
 
         return $variant;
