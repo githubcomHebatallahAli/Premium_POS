@@ -101,6 +101,13 @@ class ProductService
 
     private function handleVariantsOnUpdate(Product $product, array $variants): void
     {
+        // اجمع كل الـ ids المرسلة
+        $sentIds = collect($variants)->pluck('id')->filter()->all();
+
+        // احذف الفاريانتات القديمة التي لم تعد موجودة
+        $product->variants()->whereNotIn('id', $sentIds)->delete();
+
+        // حدث أو أنشئ الفاريانتات
         foreach ($variants as $variantData) {
             if (!empty($variantData['id'])) {
                 $variant = ProductVariant::find($variantData['id']);
