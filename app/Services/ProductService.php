@@ -142,8 +142,10 @@ class ProductService
                     $this->attachVariantImages($variant, $imageIds);
                 }
             } else {
-                // عند الإنشاء، إذا لم يتم إرسال باركود، ضع باركود المنتج الأساسي
-                $variantData['barcode'] = (isset($variantData['barcode']) && trim($variantData['barcode']) !== '') ? $variantData['barcode'] : $product->barcode;
+                // عند الإنشاء، إذا لم يتم إرسال باركود، ولّد باركود فريد
+                if (!isset($variantData['barcode']) || trim($variantData['barcode']) === '') {
+                    $variantData['barcode'] = $product->barcode . '-' . Str::upper(Str::random(4));
+                }
                 $this->createVariant($product, $variantData);
             }
         }
