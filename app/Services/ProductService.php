@@ -101,35 +101,22 @@ class ProductService
 
     private function handleVariantsOnUpdate(Product $product, array $variants): void
     {
-      
-        $sentIds = collect($variants)->pluck('id')->filter()->all();
-
-        // احذف كل الفاريانتات القديمة التي لم يتم إرسالها في الريكوست
-        $product->variants()->whereNotIn('id', $sentIds)->delete();
-
-        // عدّل أو أنشئ الفاريانتات
         foreach ($variants as $variantData) {
             if (!empty($variantData['id'])) {
                 $variant = ProductVariant::find($variantData['id']);
                 if (!$variant) {
-                    // إذا لم يوجد الفاريانت القديم، لا تنشئ جديد بنفس البيانات
-                    continue;
+                    throw new ModelNotFoundException("Variant not found: {$variantData['id']}");
                 }
-                $updateData = [
+
+                $variant->update([
                     'color'        => $variantData['color'] ?? $variant->color,
                     'size'         => $variantData['size'] ?? $variant->size,
                     'clothes'      => $variantData['clothes'] ?? $variant->clothes,
                     'sellingPrice' => $variantData['sellingPrice'] ?? $variant->sellingPrice,
                     'sku'          => $variantData['sku'] ?? $variant->sku,
+                    'barcode'      => $variantData['barcode'] ?? $variant->barcode,
                     'notes'        => $variantData['notes'] ?? $variant->notes,
-                ];
-                // احتفظ بالباركود القديم إذا لم يتم إرساله أو أُرسل كـ null أو فارغ
-                if (array_key_exists('barcode', $variantData) && $variantData['barcode'] !== null && trim($variantData['barcode']) !== '') {
-                    $updateData['barcode'] = $variantData['barcode'];
-                } else {
-                    $updateData['barcode'] = $variant->barcode;
-                }
-                $variant->update($updateData);
+                ]);
 
                 if (!empty($variantData['images'])) {
                     $imageIds = [];
@@ -142,10 +129,6 @@ class ProductService
                     $this->attachVariantImages($variant, $imageIds);
                 }
             } else {
-                // عند الإنشاء، إذا لم يتم إرسال باركود، ولّد باركود فريد
-                if (!isset($variantData['barcode']) || trim($variantData['barcode']) === '') {
-                    $variantData['barcode'] = $product->barcode . '-' . Str::upper(Str::random(4));
-                }
                 $this->createVariant($product, $variantData);
             }
         }
@@ -239,6 +222,7 @@ class ProductService
         $searchTerm = $request->input('search', '');
         $query = Product::with(['category', 'brand', 'images', 'variants.images'])
 
+        
             ->where('name', 'like', '%' . $searchTerm . '%');
 
         if ($request->filled('brand_id')) {
