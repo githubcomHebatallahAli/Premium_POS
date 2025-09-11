@@ -32,14 +32,14 @@ class ProductResource extends JsonResource
             'barcode' => $this->barcode,
             'sku' => $this->sku,
             'creationDate' => $this->creationDate,
-            'image' => $this->whenLoaded('images', function () {
-                return $this->images->map(fn($img) => [
-                    'id' => $img->id,
-                    'name' => $img->name,
-                    "image" => $this->images->map(fn($img) => url($img->path))->toArray(),
-                    
-                ]);
-            }),
+           'image' => $this->whenLoaded('images', function () {
+    return $this->images->map(fn($img) => [
+        'id' => $img->id,
+        'name' => $img->name,
+        'url' => url($img->image), // تعديل هنا
+    ]);
+}),
+           
         ];
 
         if ($this->hasRealVariants()) {
