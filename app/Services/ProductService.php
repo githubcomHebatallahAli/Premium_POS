@@ -164,11 +164,12 @@ private function handleVariantsOnUpdate(Product $product, array $variants): void
 
             // معالجة خاصة للباركود: لا يتم التحديث إلا إذا تم إرسال قيمة جديدة وغير فارغة
             if (array_key_exists('barcode', $variantData)) {
-                if ($variantData['barcode'] !== null) {
-                    // إذا تم إرسال باركود جديد وقيمته ليست null، نستخدمه
+                // تحقق من أن القيمة ليست null وليست string فارغ
+                if ($variantData['barcode'] !== null && $variantData['barcode'] !== '') {
+                    // إذا تم إرسال باركود جديد وقيمته ليست null أو فارغة، نستخدمه
                     $updateData['barcode'] = $variantData['barcode'];
                 }
-                // إذا كان null، لا نفعله شيئًا (أي نحتفظ بالباركود القديم ضمنيًا)
+                // إذا كان null أو string فارغ، لا نفعله شيئًا (نحتفظ بالباركود القديم)
             } else {
                 // إذا لم يتم إرسال حقل الباركود أساسًا في البيانات، نحتفظ بالباركود القديم
                 $updateData['barcode'] = $variant->barcode;
