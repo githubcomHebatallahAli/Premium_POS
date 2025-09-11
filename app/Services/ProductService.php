@@ -99,47 +99,90 @@ class ProductService
         }
     }
 
+    // private function handleVariantsOnUpdate(Product $product, array $variants): void
+    // {
+      
+    //     $sentIds = collect($variants)->pluck('id')->filter()->all();
+
+    //     $product->variants()->whereNotIn('id', $sentIds)->delete();
+
+      
+    //     foreach ($variants as $variantData) {
+    //         if (!empty($variantData['id'])) {
+    //             $variant = ProductVariant::find($variantData['id']);
+    //             if (!$variant) {
+    //                 throw new ModelNotFoundException("Variant not found: {$variantData['id']}");
+    //             }
+
+    //             $variant->update([
+    //                 'color'        => $variantData['color'] ?? $variant->color,
+    //                 'size'         => $variantData['size'] ?? $variant->size,
+    //                 'clothes'      => $variantData['clothes'] ?? $variant->clothes,
+    //                 'sellingPrice' => $variantData['sellingPrice'] ?? $variant->sellingPrice,
+    //                 'sku'          => $variantData['sku'] ?? $variant->sku,
+    //                 'barcode'      => $variantData['barcode'] ?? $variant->barcode,
+    //                 'notes'        => $variantData['notes'] ?? $variant->notes,
+    //             ]);
+
+    //             if (!empty($variantData['images'])) {
+    //                 $imageIds = [];
+    //                 foreach ($variantData['images'] as $imageFile) {
+    //                     $filename = uniqid() . '.' . $imageFile->getClientOriginalExtension();
+    //                     $imageFile->move(public_path('products'), $filename);
+    //                     $image = Image::create(['path' => 'products/' . $filename]);
+    //                     $imageIds[] = $image->id;
+    //                 }
+    //                 $this->attachVariantImages($variant, $imageIds);
+    //             }
+    //         } else {
+    //             $this->createVariant($product, $variantData);
+    //         }
+    //     }
+    // }
+
     private function handleVariantsOnUpdate(Product $product, array $variants): void
-    {
-        // اجمع كل الـ ids المرسلة
-        $sentIds = collect($variants)->pluck('id')->filter()->all();
+{
+    $sentIds = collect($variants)->pluck('id')->filter()->all();
+    $product->variants()->whereNotIn('id', $sentIds)->delete();
 
-        // احذف الفاريانتات القديمة التي لم تعد موجودة
-        $product->variants()->whereNotIn('id', $sentIds)->delete();
-
-        // حدث أو أنشئ الفاريانتات
-        foreach ($variants as $variantData) {
-            if (!empty($variantData['id'])) {
-                $variant = ProductVariant::find($variantData['id']);
-                if (!$variant) {
-                    throw new ModelNotFoundException("Variant not found: {$variantData['id']}");
-                }
-
-                $variant->update([
-                    'color'        => $variantData['color'] ?? $variant->color,
-                    'size'         => $variantData['size'] ?? $variant->size,
-                    'clothes'      => $variantData['clothes'] ?? $variant->clothes,
-                    'sellingPrice' => $variantData['sellingPrice'] ?? $variant->sellingPrice,
-                    'sku'          => $variantData['sku'] ?? $variant->sku,
-                    'barcode'      => $variantData['barcode'] ?? $variant->barcode,
-                    'notes'        => $variantData['notes'] ?? $variant->notes,
-                ]);
-
-                if (!empty($variantData['images'])) {
-                    $imageIds = [];
-                    foreach ($variantData['images'] as $imageFile) {
-                        $filename = uniqid() . '.' . $imageFile->getClientOriginalExtension();
-                        $imageFile->move(public_path('products'), $filename);
-                        $image = Image::create(['path' => 'products/' . $filename]);
-                        $imageIds[] = $image->id;
-                    }
-                    $this->attachVariantImages($variant, $imageIds);
-                }
-            } else {
-                $this->createVariant($product, $variantData);
+    foreach ($variants as $variantData) {
+        if (!empty($variantData['id'])) {
+            $variant = ProductVariant::find($variantData['id']);
+            if (!$variant) {
+                throw new ModelNotFoundException("Variant not found: {$variantData['id']}");
             }
+
+            // تحديث البيانات مع معالجة الباركود بشكل صحيح
+            $updateData = [
+                'color'        => $variantData['color'] ?? $variant->color,
+                'size'         => $variantData['size'] ?? $variant->size,
+                'clothes'      => $variantData['clothes'] ?? $variant->clothes,
+                'sellingPrice' => $variantData['sellingPrice'] ?? $variant->sellingPrice,
+                'notes'        => $variantData['notes'] ?? $variant->notes,
+            ];
+
+            // معالجة الباركود: فقط إذا تم تقديمه وقيمته ليست null
+            if (array_key_exists('barcode', $variantData) && $variantData['barcode'] !== null) {
+                $updateData['barcode'] = $variantData['barcode'];
+            }
+
+            $variant->update($updateData);
+
+            if (!empty($variantData['images'])) {
+                $imageIds = [];
+                foreach ($variantData['images'] as $imageFile) {
+                    $filename = uniqid() . '.' . $imageFile->getClientOriginalExtension();
+                    $imageFile->move(public_path('products'), $filename);
+                    $image = Image::create(['path' => 'products/' . $filename]);
+                    $imageIds[] = $image->id;
+                }
+                $this->attachVariantImages($variant, $imageIds);
+            }
+        } else {
+            $this->createVariant($product, $variantData);
         }
     }
+}
 
     private function createVariant(Product $product, array $variantData): ProductVariant
     {
