@@ -142,16 +142,23 @@ class ProductService
                     $this->attachVariantImages($variant, $imageIds);
                 }
             } else {
-                // تحقق إذا كان هناك فاريانت بنفس اللون والمقاس والمنتج بالفعل
+                // تحقق إذا كان هناك فاريانت بنفس اللون والمقاس والمنتج أو بنفس الباركود بالفعل
                 $exists = $product->variants()
-                    ->where('color', $variantData['color'] ?? null)
-                    ->where('size', $variantData['size'] ?? null)
-                    ->where('clothes', $variantData['clothes'] ?? null)
+                    ->where(function($q) use ($variantData) {
+                        $q->where('color', $variantData['color'] ?? null)
+                          ->where('size', $variantData['size'] ?? null)
+                          ->where('clothes', $variantData['clothes'] ?? null);
+                    })
+                    ->orWhere(function($q) use ($variantData) {
+                        if (!empty($variantData['barcode'])) {
+                            $q->where('barcode', $variantData['barcode']);
+                        }
+                    })
                     ->exists();
                 if (!$exists) {
                     $this->createVariant($product, $variantData);
                 }
-                // إذا كان موجود بالفعل، تجاهل الإنشاء لتجنب التكرار
+                // إذا كان موجود بالفعل، تجاهل الإنشاء لتجنب تكرار الباركود أو الفاريانت
             }
         }
     }
