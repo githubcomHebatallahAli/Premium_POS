@@ -55,37 +55,37 @@ class ProductService
         });
     }
 
-    // public function updateProduct(Product $product, array $data): Product
-    // {
-    //     return DB::transaction(function () use ($product, $data) {
-    //         $product->update([
-    //             'name'         => $data['name'] ?? $product->name,
-    //             'sellingPrice' => $data['sellingPrice'] ?? $product->sellingPrice,
-    //             'category_id'  => $data['category_id'] ?? $product->category_id,
-    //             'brand_id'     => $data['brand_id'] ?? $product->brand_id,
-    //             'description'  => $data['description'] ?? $product->description,
-    //             'country'      => $data['country'] ?? $product->country,
-    //             'barcode'      => $data['barcode'] ?? $product->barcode,
-    //         ]);
+    public function updateProduct(Product $product, array $data): Product
+    {
+        return DB::transaction(function () use ($product, $data) {
+            $product->update([
+                'name'         => $data['name'] ?? $product->name,
+                'sellingPrice' => $data['sellingPrice'] ?? $product->sellingPrice,
+                'category_id'  => $data['category_id'] ?? $product->category_id,
+                'brand_id'     => $data['brand_id'] ?? $product->brand_id,
+                'description'  => $data['description'] ?? $product->description,
+                'country'      => $data['country'] ?? $product->country,
+                'barcode'      => $data['barcode'] ?? $product->barcode,
+            ]);
 
-    //         if (!empty($data['images'])) {
-    //             $imageIds = [];
-    //             foreach ($data['images'] as $imageFile) {
-    //                 $filename = uniqid() . '.' . $imageFile->getClientOriginalExtension();
-    //                 $imageFile->move(public_path('products'), $filename);
-    //                 $image = Image::create(['path' => 'products/' . $filename]);
-    //                 $imageIds[] = $image->id;
-    //             }
-    //             $this->attachProductImages($product, $imageIds);
-    //         }
+            if (!empty($data['images'])) {
+                $imageIds = [];
+                foreach ($data['images'] as $imageFile) {
+                    $filename = uniqid() . '.' . $imageFile->getClientOriginalExtension();
+                    $imageFile->move(public_path('products'), $filename);
+                    $image = Image::create(['path' => 'products/' . $filename]);
+                    $imageIds[] = $image->id;
+                }
+                $this->attachProductImages($product, $imageIds);
+            }
 
-    //         if (isset($data['variants'])) {
-    //             $this->handleVariantsOnUpdate($product, $data['variants']);
-    //         }
+            if (isset($data['variants'])) {
+                $this->handleVariantsOnUpdate($product, $data['variants']);
+            }
 
-    //         return $product->load(['category', 'brand', 'images', 'variants.images']);
-    //     });
-    // }
+            return $product->load(['category', 'brand', 'images', 'variants.images']);
+        });
+    }
 
     private function handleVariantsOnCreate(Product $product, ?array $variants): void
     {
@@ -99,132 +99,46 @@ class ProductService
         }
     }
 
-    // private function handleVariantsOnUpdate(Product $product, array $variants): void
-    // {
+    private function handleVariantsOnUpdate(Product $product, array $variants): void
+    {
       
-    //     $sentIds = collect($variants)->pluck('id')->filter()->all();
+        $sentIds = collect($variants)->pluck('id')->filter()->all();
 
-    //     $product->variants()->whereNotIn('id', $sentIds)->delete();
+        $product->variants()->whereNotIn('id', $sentIds)->delete();
 
-      
-    //     foreach ($variants as $variantData) {
-    //         if (!empty($variantData['id'])) {
-    //             $variant = ProductVariant::find($variantData['id']);
-    //             if (!$variant) {
-    //                 throw new ModelNotFoundException("Variant not found: {$variantData['id']}");
-    //             }
-
-    //             $variant->update([
-    //                 'color'        => $variantData['color'] ?? $variant->color,
-    //                 'size'         => $variantData['size'] ?? $variant->size,
-    //                 'clothes'      => $variantData['clothes'] ?? $variant->clothes,
-    //                 'sellingPrice' => $variantData['sellingPrice'] ?? $variant->sellingPrice,
-    //                 'sku'          => $variantData['sku'] ?? $variant->sku,
-    //                 'barcode'      => $variantData['barcode'] ?? $variant->barcode,
-    //                 'notes'        => $variantData['notes'] ?? $variant->notes,
-    //             ]);
-
-    //             if (!empty($variantData['images'])) {
-    //                 $imageIds = [];
-    //                 foreach ($variantData['images'] as $imageFile) {
-    //                     $filename = uniqid() . '.' . $imageFile->getClientOriginalExtension();
-    //                     $imageFile->move(public_path('products'), $filename);
-    //                     $image = Image::create(['path' => 'products/' . $filename]);
-    //                     $imageIds[] = $image->id;
-    //                 }
-    //                 $this->attachVariantImages($variant, $imageIds);
-    //             }
-    //         } else {
-    //             $this->createVariant($product, $variantData);
-    //         }
-    //     }
-    // }
-
-public function updateProduct(Product $product, array $data): Product
-{
-    return DB::transaction(function () use ($product, $data) {
-        // 1. تحديث بيانات المنتج الأساسية
-        $product->update([
-            'name'         => $data['name'] ?? $product->name,
-            'sellingPrice' => $data['sellingPrice'] ?? $product->sellingPrice,
-            'category_id'  => $data['category_id'] ?? $product->category_id,
-            'brand_id'     => $data['brand_id'] ?? $product->brand_id,
-            'description'  => $data['description'] ?? $product->description,
-            'country'      => $data['country'] ?? $product->country,
-            'barcode'      => $data['barcode'] ?? $product->barcode,
-        ]);
-
-        // 2. إذا تم إرسال variants، قم بمعالجتهم
-        if (isset($data['variants'])) {
-            $this->handleVariantsOnUpdate($product, $data['variants']);
-        }
-
-        return $product->load(['category', 'brand', 'images', 'variants.images']);
-    });
-}
-
-private function handleVariantsOnUpdate(Product $product, array $variants): void
-{
-    $existingVariants = $product->variants;
-
-    foreach ($variants as $variantData) {
-        // الخيار 1: إذا أرسل id، نبحث به
-        if (!empty($variantData['id'])) {
-            $variant = ProductVariant::find($variantData['id']);
-        } 
-        // الخيار 2: إذا لم يرسل id، نبحث باللون والمقاس
-        else {
-            $variant = $existingVariants->first(function($v) use ($variantData) {
-                return $v->color === ($variantData['color'] ?? null) 
-                    && $v->size === ($variantData['size'] ?? null);
-            });
-        }
-
-        if ($variant) {
-            // تحديث الفاريانت الموجود
-            $updateData = [
-                'color'        => $variantData['color'] ?? $variant->color,
-                'size'         => $variantData['size'] ?? $variant->size,
-                'clothes'      => $variantData['clothes'] ?? $variant->clothes,
-                'sellingPrice' => $variantData['sellingPrice'] ?? $variant->sellingPrice,
-                'notes'        => $variantData['notes'] ?? $variant->notes,
-            ];
-
-            // المعالجة الذكية للباركود
-            if (array_key_exists('barcode', $variantData)) {
-                if ($variantData['barcode'] !== null && $variantData['barcode'] !== '') {
-                    $updateData['barcode'] = $variantData['barcode'];
+        // حدث أو أنشئ الفاريانتات
+        foreach ($variants as $variantData) {
+            if (!empty($variantData['id'])) {
+                $variant = ProductVariant::find($variantData['id']);
+                if (!$variant) {
+                    throw new ModelNotFoundException("Variant not found: {$variantData['id']}");
                 }
-                // إذا كان فارغاً أو null، لا نحدثه (نحتفظ بالقديم)
+
+                $variant->update([
+                    'color'        => $variantData['color'] ?? $variant->color,
+                    'size'         => $variantData['size'] ?? $variant->size,
+                    'clothes'      => $variantData['clothes'] ?? $variant->clothes,
+                    'sellingPrice' => $variantData['sellingPrice'] ?? $variant->sellingPrice,
+                    'sku'          => $variantData['sku'] ?? $variant->sku,
+                    'barcode'      => $variantData['barcode'] ?? $variant->barcode,
+                    'notes'        => $variantData['notes'] ?? $variant->notes,
+                ]);
+
+                if (!empty($variantData['images'])) {
+                    $imageIds = [];
+                    foreach ($variantData['images'] as $imageFile) {
+                        $filename = uniqid() . '.' . $imageFile->getClientOriginalExtension();
+                        $imageFile->move(public_path('products'), $filename);
+                        $image = Image::create(['path' => 'products/' . $filename]);
+                        $imageIds[] = $image->id;
+                    }
+                    $this->attachVariantImages($variant, $imageIds);
+                }
+            } else {
+                $this->createVariant($product, $variantData);
             }
-
-            $variant->update($updateData);
-
-        } else {
-            // إنشاء فاريانت جديد
-            $this->createVariant($product, $variantData);
         }
     }
-
-    // حذف الفاريانتس التي لم تعد موجودة
-    $this->cleanupDeletedVariants($product, $variants);
-}
-
-private function cleanupDeletedVariants(Product $product, array $variants): void
-{
-    $sentIds = collect($variants)->pluck('id')->filter()->all();
-    $sentCombinations = collect($variants)->map(function($v) {
-        return ($v['color'] ?? '') . '|' . ($v['size'] ?? '') . '|' . ($v['clothes'] ?? '');
-    })->all();
-
-    $product->variants->each(function($variant) use ($sentIds, $sentCombinations) {
-        $combination = ($variant->color ?? '') . '|' . ($variant->size ?? '') . '|' . ($variant->clothes ?? '');
-        
-        if (!in_array($variant->id, $sentIds) && !in_array($combination, $sentCombinations)) {
-            $variant->delete();
-        }
-    });
-}
 
     private function createVariant(Product $product, array $variantData): ProductVariant
     {
