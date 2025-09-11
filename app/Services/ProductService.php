@@ -115,15 +115,21 @@ class ProductService
                     throw new ModelNotFoundException("Variant not found: {$variantData['id']}");
                 }
 
-                $variant->update([
+                $updateData = [
                     'color'        => $variantData['color'] ?? $variant->color,
                     'size'         => $variantData['size'] ?? $variant->size,
                     'clothes'      => $variantData['clothes'] ?? $variant->clothes,
                     'sellingPrice' => $variantData['sellingPrice'] ?? $variant->sellingPrice,
                     'sku'          => $variantData['sku'] ?? $variant->sku,
-                    'barcode'      => $variantData['barcode'] ?? $variant->barcode,
                     'notes'        => $variantData['notes'] ?? $variant->notes,
-                ]);
+                ];
+                // احتفظ بالباركود القديم إذا لم يتم إرساله أو تم إرساله كـ null
+                if (array_key_exists('barcode', $variantData) && $variantData['barcode'] !== null) {
+                    $updateData['barcode'] = $variantData['barcode'];
+                } else {
+                    $updateData['barcode'] = $variant->barcode;
+                }
+                $variant->update($updateData);
 
                 if (!empty($variantData['images'])) {
                     $imageIds = [];
@@ -150,7 +156,7 @@ class ProductService
             'clothes'      => $variantData['clothes'] ?? null,
             'sellingPrice' => $variantData['sellingPrice'] ?? $product->sellingPrice,
             'sku'          => $variantData['sku'] ?? $this->generateVariantSku($product, $variantData),
-            'barcode'      => $variantData['barcode'] ?? null,
+            'barcode'      => $variantData['barcode'] ?? $product->barcode,
             'notes'        => $variantData['notes'] ?? null,
             'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s')
         ]);
