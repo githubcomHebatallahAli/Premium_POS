@@ -199,7 +199,7 @@ class ProductService
 
     public function getProductById($id): ?Product
     {
-        return Product::with(['category', 'brand', 'variants.images'])->find($id);
+        return Product::with(['category', 'brand','images', 'variants.images'])->find($id);
     }
 
     public function getDeletedProducts()
