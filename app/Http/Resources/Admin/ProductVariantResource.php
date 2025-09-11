@@ -20,11 +20,11 @@ class ProductVariantResource extends JsonResource
             'barcode' => $this->barcode,
             'notes' => $this->notes,
             'creationDate' => $this->creationDate,
-         'image' => $this->whenLoaded('images', function () {
+         'images' => $this->whenLoaded('images', function () {
     return $this->images->map(fn($img) => [
         'id' => $img->id,
         'name' => $img->name,
-        'url' => url($img->image), // تعديل هنا
+        'url' => url($img->image),
     ]);
 }),
 
