@@ -112,7 +112,8 @@ class ProductService
             if (!empty($variantData['id'])) {
                 $variant = ProductVariant::find($variantData['id']);
                 if (!$variant) {
-                    throw new ModelNotFoundException("Variant not found: {$variantData['id']}");
+                    // إذا لم يوجد الفاريانت القديم، لا تنشئ جديد بنفس البيانات
+                    continue;
                 }
                 $updateData = [
                     'color'        => $variantData['color'] ?? $variant->color,
@@ -123,7 +124,7 @@ class ProductService
                     'notes'        => $variantData['notes'] ?? $variant->notes,
                 ];
                 // احتفظ بالباركود القديم إذا لم يتم إرساله أو أُرسل كـ null أو فارغ
-                if (array_key_exists('barcode', $variantData) && $variantData['barcode'] !== null && $variantData['barcode'] !== '') {
+                if (array_key_exists('barcode', $variantData) && $variantData['barcode'] !== null && trim($variantData['barcode']) !== '') {
                     $updateData['barcode'] = $variantData['barcode'];
                 } else {
                     $updateData['barcode'] = $variant->barcode;
@@ -141,6 +142,8 @@ class ProductService
                     $this->attachVariantImages($variant, $imageIds);
                 }
             } else {
+                // عند الإنشاء، إذا لم يتم إرسال باركود، ضع باركود المنتج الأساسي
+                $variantData['barcode'] = (isset($variantData['barcode']) && trim($variantData['barcode']) !== '') ? $variantData['barcode'] : $product->barcode;
                 $this->createVariant($product, $variantData);
             }
         }
