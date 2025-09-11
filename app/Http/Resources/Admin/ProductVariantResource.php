@@ -24,7 +24,7 @@ class ProductVariantResource extends JsonResource
                 return $this->images->map(fn($img) => [
                     'id' => $img->id,
                     'name' => $img->name,
-                    'image' => $img->image,
+                    'image' => $img->image ? asset($img->image) : null,
                     
                 ]);
             }),
