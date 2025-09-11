@@ -104,10 +104,8 @@ class ProductService
       
         $sentIds = collect($variants)->pluck('id')->filter()->all();
 
-        // احذف الفاريانتات التي لم يتم إرسالها في الريكوست
-        if (!empty($sentIds)) {
-            $product->variants()->whereNotIn('id', $sentIds)->delete();
-        }
+        // احذف كل الفاريانتات القديمة التي لم يتم إرسالها في الريكوست
+        $product->variants()->whereNotIn('id', $sentIds)->delete();
 
         // عدّل أو أنشئ الفاريانتات
         foreach ($variants as $variantData) {
