@@ -115,21 +115,15 @@ class ProductService
                     throw new ModelNotFoundException("Variant not found: {$variantData['id']}");
                 }
 
-                $updateData = [
+                $variant->update([
                     'color'        => $variantData['color'] ?? $variant->color,
                     'size'         => $variantData['size'] ?? $variant->size,
                     'clothes'      => $variantData['clothes'] ?? $variant->clothes,
                     'sellingPrice' => $variantData['sellingPrice'] ?? $variant->sellingPrice,
                     'sku'          => $variantData['sku'] ?? $variant->sku,
+                    'barcode'      => $variantData['barcode'] ?? $variant->barcode,
                     'notes'        => $variantData['notes'] ?? $variant->notes,
-                ];
-                // احتفظ بالباركود القديم إذا لم يتم إرساله أو تم إرساله كـ null
-                if (array_key_exists('barcode', $variantData) && $variantData['barcode'] !== null) {
-                    $updateData['barcode'] = $variantData['barcode'];
-                } else {
-                    $updateData['barcode'] = $variant->barcode;
-                }
-                $variant->update($updateData);
+                ]);
 
                 if (!empty($variantData['images'])) {
                     $imageIds = [];
@@ -142,23 +136,7 @@ class ProductService
                     $this->attachVariantImages($variant, $imageIds);
                 }
             } else {
-                // تحقق إذا كان هناك فاريانت بنفس اللون والمقاس والمنتج أو بنفس الباركود بالفعل
-                $exists = $product->variants()
-                    ->where(function($q) use ($variantData) {
-                        $q->where('color', $variantData['color'] ?? null)
-                          ->where('size', $variantData['size'] ?? null)
-                          ->where('clothes', $variantData['clothes'] ?? null);
-                    })
-                    ->orWhere(function($q) use ($variantData) {
-                        if (!empty($variantData['barcode'])) {
-                            $q->where('barcode', $variantData['barcode']);
-                        }
-                    })
-                    ->exists();
-                if (!$exists) {
-                    $this->createVariant($product, $variantData);
-                }
-                // إذا كان موجود بالفعل، تجاهل الإنشاء لتجنب تكرار الباركود أو الفاريانت
+                $this->createVariant($product, $variantData);
             }
         }
     }
@@ -172,7 +150,7 @@ class ProductService
             'clothes'      => $variantData['clothes'] ?? null,
             'sellingPrice' => $variantData['sellingPrice'] ?? $product->sellingPrice,
             'sku'          => $variantData['sku'] ?? $this->generateVariantSku($product, $variantData),
-            'barcode'      => $variantData['barcode'] ?? $product->barcode,
+            'barcode'      => $variantData['barcode'] ?? null,
             'notes'        => $variantData['notes'] ?? null,
             'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s')
         ]);
