@@ -36,7 +36,7 @@ class ProductResource extends JsonResource
                 return $this->images->map(fn($img) => [
                     'id' => $img->id,
                     'name' => $img->name,
-                    "images" => $this->images->map(fn($img) => url($img->path))->toArray(),
+                    "image" => $this->images->map(fn($img) => url($img->path))->toArray(),
                     
                 ]);
             }),
