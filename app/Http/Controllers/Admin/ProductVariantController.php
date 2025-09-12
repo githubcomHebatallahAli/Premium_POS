@@ -34,12 +34,6 @@ class ProductVariantVariantController extends Controller
                 'notes' => $request->notes,
             ]);
 
-            if ($request->hasFile('mainImage')) {
-                $MainImagePath = $request->file('mainImage')->store(ProductVariant::storageFolder);
-                $ProductVariant->mainImage = $MainImagePath;
-            }
-
-           $ProductVariant->save();
            return response()->json([
             'data' =>new ProductVariantResource($ProductVariant),
             'message' => "Variant Created Successfully."
@@ -75,7 +69,6 @@ class ProductVariantVariantController extends Controller
             }
 
             // $this->authorize('edit',$ProductVariant);
-
             return response()->json([
                 'data' => new ProductVariantResource($ProductVariant),
                 'message' => "Edit Variant By ID Successfully."
@@ -89,9 +82,11 @@ public function update(ProductVariantRequest $request, string $id)
     $variant = ProductVariant::findOrFail($id);
 
     $product = Product::findOrFail($variant->product_id);
+    $formattedSellingPrice = number_format($request->sellingPrice, 2, '.', '');
 
     $updateData = [
-        "sellingPrice" => number_format($request->sellingPrice, 2, '.', ''),
+        "product_id" => $request->poduct_id,
+        "sellingPrice" => $formattedSellingPrice,
         'color' => $request->color,
         'size' => $request->size,
         'clothes' => $request->clothes,
@@ -111,10 +106,6 @@ public function update(ProductVariantRequest $request, string $id)
         $updateData['sku'] = $variant->sku; 
     }
 
-    if ($request->hasFile('images')) {
-        $MainImagePath = $request->file('mainImage')->store(ProductVariant::storageFolder);
-        $updateData['mainImage'] = $MainImagePath;
-    }
 
     $variant->update($updateData);
 

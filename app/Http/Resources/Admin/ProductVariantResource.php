@@ -21,7 +21,7 @@ class ProductVariantResource extends JsonResource
             'barcode' => $this->barcode,
             'notes' => $this->notes,
             'creationDate' => $this->creationDate,
-            'images' => $this->images
+           
         ];
     }
 }

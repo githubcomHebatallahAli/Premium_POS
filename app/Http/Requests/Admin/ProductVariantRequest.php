@@ -43,8 +43,7 @@ class ProductVariantRequest extends FormRequest
             'variants.*.barcode' => 'nullable|string',
             'variants.*.sku' => 'nullable|string|unique:product_variants,sku',
             'variants.*.notes' => 'nullable|string',
-            'variants.*.images'   => 'nullable|array',
-            'variants.*.images.*' => 'nullable|image|mimes:jpg,jpeg,png,gif,svg',
+
         ];
     }
 

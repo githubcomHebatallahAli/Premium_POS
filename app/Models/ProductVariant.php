@@ -9,10 +9,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class ProductVariant extends Model
 {
       use HasFactory, SoftDeletes;
-    const storageFolder= 'ProductVariants';
+  
     protected $fillable = [
         'product_id',
-        'images',
         'color',
         'size',
         'clothes',
@@ -30,9 +29,7 @@ class ProductVariant extends Model
         return $this->belongsTo(Product::class);
     }
 
-    protected $casts = [
-        'images' => 'array',
-    ];
+  
 
     
 
