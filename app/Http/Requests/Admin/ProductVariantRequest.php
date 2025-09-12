@@ -24,26 +24,14 @@ class ProductVariantRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255',
-            'sellingPrice' => 'required|numeric|min:0',
-            'category_id' => 'required|exists:categories,id',
-            'brand_id' => 'nullable|exists:brands,id',
-            'description' => 'nullable|string',
-            'country' => 'nullable|string',
-            'barcode' => 'nullable|string|unique:products,barcode,' . $this->id,
+            'sellingPrice' => 'nullable|numeric|min:0',
+            'product_id' => 'required|exists:products,id',
+            'notes' => 'nullable|string',
+            'color' => 'nullable|string',
+            'size' => 'nullable|string',
+            'barcode' => 'nullable|string',
             'sku' => 'nullable|string|unique:products,sku,'.$this->id,
-            'image_ids'   => 'nullable|array',
-            'image_ids.*' => 'exists:images,id',
-            
-            'variants' => 'nullable|array',
-            'variants.*.color' => 'nullable|string',
-            'variants.*.size' => 'nullable|string',
-            'variants.*.clothes' => 'nullable|in:sm,md,lg,xl,2xl,3xl,4xl,5xl,6xl,+xl',
-            'variants.*.sellingPrice' => 'nullable|numeric|min:0',
-            'variants.*.barcode' => 'nullable|string',
-            'variants.*.sku' => 'nullable|string|unique:product_variants,sku',
-            'variants.*.notes' => 'nullable|string',
-
+            'clothes' => 'nullable|in:sm,md,lg,xl,2xl,3xl,4xl,5xl,6xl,+xl',
         ];
     }
 
