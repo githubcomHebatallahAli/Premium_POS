@@ -72,8 +72,7 @@ public function create(array $data): Shipment
 
     
         $shipment->updateShipmentProductsCount();
-
-        return $shipment->fresh(['products.variant', 'supplier', 'shipmentProducts.variant']);
+$shipment->fresh(['products.variants', 'supplier', 'shipmentProducts.variant']);
 
     });
 }
