@@ -15,50 +15,53 @@ use Illuminate\Support\Str;
 class ProductVariantController extends Controller
 {
     use ManagesModelsTrait;
-        public function create(ProductVariantRequest $request)
-    {
-        $this->authorize('manage_users');
-        // $this->authorize('create',ProductVariant::class);
-         $product = Product::findOrFail($request->product_id);
-           $rawSellingPrice = $request->filled('sellingPrice') 
+public function create(ProductVariantRequest $request)
+{
+    $this->authorize('manage_users');
+
+    $product = Product::findOrFail($request->product_id);
+
+    $rawSellingPrice = $request->filled('sellingPrice') 
         ? $request->sellingPrice 
         : $product->sellingPrice;
 
     $formattedSellingPrice = number_format($rawSellingPrice, 2, '.', '');
-           $ProductVariant =ProductVariant::create ([
-                "product_id" => $request->product_id,
-                "sellingPrice" => $formattedSellingPrice,
-                'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
-                'color' => $request->color,
-                'size' => $request->size,
-                'clothes' => $request->clothes,
-                'barcode' => $request->barcode,
-                'sku' => $this->generateVariantSku($product->name, $request->all()),
-                'notes' => $request->notes,
-            ]);
 
-           return response()->json([
-            'data' =>new ProductVariantResource($ProductVariant),
-            'message' => "Variant Created Successfully."
-        ]);
-        }
+    $ProductVariant = ProductVariant::create([
+        "product_id"    => $request->product_id,
+        "sellingPrice"  => $formattedSellingPrice,
+        'creationDate'  => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
+        'color'         => $request->color,
+        'size'          => $request->size,
+        'clothes'       => $request->clothes,
+        'barcode'       => $request->barcode,
+        'sku'           => $this->generateVariantSku($product->name, $request->all()),
+        'notes'         => $request->notes,
+    ]);
 
-    private function generateVariantSku(string $productName, array $variantData): string
-    {
-        $base = $productName;
-        $color = $variantData['color'] ?? null;
-        $size = $variantData['size'] ?? null;
-        $clothes = $variantData['clothes'] ?? null;
-        $random = Str::upper(Str::random(4));
+    return response()->json([
+        'data'    => new ProductVariantResource($ProductVariant),
+        'message' => "Variant Created Successfully."
+    ]);
+}
 
-        $skuParts = [$base];
+private function generateVariantSku(string $productName, array $variantData): string
+{
+    $base    = $productName;
+    $color   = $variantData['color'] ?? null;
+    $size    = $variantData['size'] ?? null;
+    $clothes = $variantData['clothes'] ?? null;
+    $random  = Str::upper(Str::random(4));
 
-        if ($color) $skuParts[] = $color;
-        if ($size) $skuParts[] = $size;
-        if ($clothes) $skuParts[] = $clothes;
+    $skuParts = [$base];
 
-        return implode('-', $skuParts) . '-' . $random;
-    }
+    if ($color)   $skuParts[] = $color;
+    if ($size)    $skuParts[] = $size;
+    if ($clothes) $skuParts[] = $clothes;
+
+    return implode('-', $skuParts) . '-' . $random;
+}
+
 
         public function edit(string $id)
         {
@@ -83,27 +86,24 @@ public function update(ProductVariantRequest $request, string $id)
     $this->authorize('manage_users');
 
     $variant = ProductVariant::findOrFail($id);
+    $product = Product::findOrFail($request->product_id ?? $variant->product_id);
 
-    $product = Product::findOrFail($variant->product_id);
-
-    if ($request->filled('sellingPrice')) {
-        $formattedSellingPrice = number_format($request->sellingPrice, 2, '.', '');
-    } else {
-        $formattedSellingPrice = $variant->sellingPrice;
-    }
+    $formattedSellingPrice = $request->filled('sellingPrice')
+        ? number_format($request->sellingPrice, 2, '.', '')
+        : $variant->sellingPrice;
 
     $updateData = [
-        "product_id" => $request->product_id,
-        "sellingPrice" => $formattedSellingPrice,
-        'color' => $request->color,
-        'size' => $request->size,
-        'clothes' => $request->clothes,
-        'barcode' => $request->barcode,
-        'notes' => $request->notes,
+        "product_id"    => $request->product_id ?? $variant->product_id,
+        "sellingPrice"  => $formattedSellingPrice,
+        'color'         => $request->color,
+        'size'          => $request->size,
+        'clothes'       => $request->clothes,
+        'barcode'       => $request->barcode,
+        'notes'         => $request->notes,
     ];
 
-   
-  $skuFieldsChanged = (
+    $skuFieldsChanged = (
+        $request->product_id !== null && $request->product_id != $variant->product_id ||  // لو اتغير الـ product_id
         $product->name   !== $variant->product->name ||
         $request->color  !== $variant->color ||
         $request->size   !== $variant->size ||
@@ -111,10 +111,8 @@ public function update(ProductVariantRequest $request, string $id)
     );
 
     if ($skuFieldsChanged) {
-    
         $updateData['sku'] = $this->generateVariantSku($product->name, $request->all());
     } else {
-  
         $updateData['sku'] = $variant->sku;
     }
 
@@ -125,8 +123,6 @@ public function update(ProductVariantRequest $request, string $id)
         'message' => "Variant Updated Successfully."
     ]);
 }
-
-
 
 
     public function destroy(string $id){
