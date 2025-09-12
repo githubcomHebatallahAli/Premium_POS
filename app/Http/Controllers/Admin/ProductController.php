@@ -204,7 +204,7 @@ $this->authorize('manage_users');
                 "sellingPrice" => $formattedSellingPrice,
                 'country' => $request->country,
                 'barcode' => $request->barcode,
-                // 'sku' => $this->generateProductSku($request['name']),
+                'sku' => $this->generateProductSku($request['name']),
                 'description' => $request->description,
                 'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
             ]);
