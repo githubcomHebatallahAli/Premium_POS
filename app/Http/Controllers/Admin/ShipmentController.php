@@ -43,7 +43,7 @@ class ShipmentController extends Controller
 
 public function edit($id)
 {
-    $shipment = Shipment::with(['products', 'supplier'])->findOrFail($id);
+    $shipment = Shipment::with(['products', 'supplier','variant'])->findOrFail($id);
     $this->shipmentService->recalculateTotals($shipment);
 
     return response()->json([
@@ -60,7 +60,7 @@ public function showAll(Request $request)
     $fromDate = $request->input('from_date');
     $toDate = $request->input('to_date');
 
-    $query = Shipment::with('supplier')
+    $query = Shipment::with('supplier','product','variant')
         ->when($searchTerm, function($q) use ($searchTerm) {
             $q->where(function($sub) use ($searchTerm) {
                 $sub->where('importer', 'like', "%{$searchTerm}%")

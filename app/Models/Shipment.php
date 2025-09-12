@@ -47,6 +47,11 @@ class Shipment extends Model
         ->withPivot('quantity', 'price','unitPrice', 'returnReason','endDate','product_variant_id');
     }
 
+    public function shipmentProducts()
+{
+    return $this->hasMany(ShipmentProduct::class, 'shipment_id');
+}
+
 
     protected static function booted()
     {
