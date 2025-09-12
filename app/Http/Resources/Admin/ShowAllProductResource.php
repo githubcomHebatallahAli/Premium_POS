@@ -18,7 +18,7 @@ class ShowAllProductResource extends JsonResource
         
         return [
             "id" => $this -> id,
-            "barcode" => $this -> barcode,
+            // "barcode" => $this -> barcode,
             "mainImage" => $this -> mainImage,
             "name" => $this -> name ,
             'categoryName' => $this->category->name ?? null,
@@ -26,7 +26,6 @@ class ShowAllProductResource extends JsonResource
             "sellingPrice" => $this -> sellingPrice,
             'totalQuantity' => $totalQuantity,
             "creationDate" => $this -> creationDate,
-           
         ];
     }
 }
