@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 
-class ProductVariantVariantController extends Controller
+class ProductVariantController extends Controller
 {
     use ManagesModelsTrait;
         public function create(ProductVariantRequest $request)
