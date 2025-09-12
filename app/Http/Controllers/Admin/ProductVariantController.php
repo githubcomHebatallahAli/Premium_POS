@@ -19,9 +19,12 @@ class ProductVariantController extends Controller
     {
         $this->authorize('manage_users');
         // $this->authorize('create',ProductVariant::class);
-        $formattedSellingPrice = number_format($request->sellingPrice, 2, '.', '');
          $product = Product::findOrFail($request->product_id);
-      
+           $rawSellingPrice = $request->filled('sellingPrice') 
+        ? $request->sellingPrice 
+        : $product->sellingPrice;
+
+    $formattedSellingPrice = number_format($rawSellingPrice, 2, '.', '');
            $ProductVariant =ProductVariant::create ([
                 "product_id" => $request->product_id,
                 "sellingPrice" => $formattedSellingPrice,
@@ -82,10 +85,15 @@ public function update(ProductVariantRequest $request, string $id)
     $variant = ProductVariant::findOrFail($id);
 
     $product = Product::findOrFail($variant->product_id);
-    $formattedSellingPrice = number_format($request->sellingPrice, 2, '.', '');
+
+    if ($request->filled('sellingPrice')) {
+        $formattedSellingPrice = number_format($request->sellingPrice, 2, '.', '');
+    } else {
+        $formattedSellingPrice = $variant->sellingPrice;
+    }
 
     $updateData = [
-        "product_id" => $request->poduct_id,
+        "product_id" => $request->product_id,
         "sellingPrice" => $formattedSellingPrice,
         'color' => $request->color,
         'size' => $request->size,
@@ -94,7 +102,7 @@ public function update(ProductVariantRequest $request, string $id)
         'notes' => $request->notes,
     ];
 
-    
+   
     if (
         $product->name !== $variant->product->name ||
         $request->color !== $variant->color ||
@@ -106,7 +114,6 @@ public function update(ProductVariantRequest $request, string $id)
         $updateData['sku'] = $variant->sku; 
     }
 
-
     $variant->update($updateData);
 
     return response()->json([
@@ -114,6 +121,7 @@ public function update(ProductVariantRequest $request, string $id)
         'message' => "Variant Updated Successfully."
     ]);
 }
+
 
 
 
