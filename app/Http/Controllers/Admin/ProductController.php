@@ -151,9 +151,9 @@ $this->authorize('manage_users');
             ]);
 
 
-            if ($request->hasFile('MainImage')) {
-                $MainImagePath = $request->file('MainImage')->store(Product::storageFolder);
-                $Product->MainImage = $MainImagePath;
+            if ($request->hasFile('mainImage')) {
+                $MainImagePath = $request->file('mainImage')->store(Product::storageFolder);
+                $Product->mainImage = $MainImagePath;
             }
 
            $Product->save();
@@ -215,12 +215,12 @@ public function update(ProductRequest $request, string $id)
         'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
     ]);
 
-    if ($request->hasFile('MainImage')) {
-        if ($Product->MainImage) {
-            Storage::disk('public')->delete($Product->MainImage);
+    if ($request->hasFile('mainImage')) {
+        if ($Product->mainImage) {
+            Storage::disk('public')->delete($Product->mainImage);
         }
-        $MainImagePath = $request->file('MainImage')->store('Products', 'public');
-        $Product->MainImage = $MainImagePath;
+        $MainImagePath = $request->file('mainImage')->store('Products', 'public');
+        $Product->mainImage = $MainImagePath;
     }
 
     $Product->save();
