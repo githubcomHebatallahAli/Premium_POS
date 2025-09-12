@@ -15,6 +15,41 @@ use Illuminate\Support\Str;
 class ProductVariantController extends Controller
 {
     use ManagesModelsTrait;
+
+        public function showAll()
+    {
+        // $this->authorize('showAll',ProductVariant::class);
+         $this->authorize('manage_users');
+        $ProductVariant = ProductVariant:: orderBy('created_at', 'desc')
+        ->paginate(10);
+
+                  return response()->json([
+                      'data' =>  ProductVariantResource::collection($ProductVariant),
+                      'pagination' => [
+                        'total' => $ProductVariant->total(),
+                        'count' => $ProductVariant->count(),
+                        'per_page' => $ProductVariant->perPage(),
+                        'current_page' => $ProductVariant->currentPage(),
+                        'total_pages' => $ProductVariant->lastPage(),
+                        'next_page_url' => $ProductVariant->nextPageUrl(),
+                        'prev_page_url' => $ProductVariant->previousPageUrl(),
+                    ],
+                      'message' => "Show All ProductVariant  With Products."
+                  ]);
+    }
+        public function showAllproductVariant()
+    {
+        // $this->authorize('showAll',ProductVariant::class);
+         $this->authorize('manage_users');
+        $ProductVariant = ProductVariant:: orderBy('created_at', 'desc')
+        ->get();
+
+                  return response()->json([
+                      'data' =>  ProductVariantResource::collection($ProductVariant),
+                      'message' => "Show All ProductVariant  With Products."
+                  ]);
+    }
+
 public function create(ProductVariantRequest $request)
 {
     $this->authorize('manage_users');
