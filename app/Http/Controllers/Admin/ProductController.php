@@ -144,9 +144,9 @@ $this->authorize('manage_users');
                 'description' => $request->description,
             ]);
 
-            if ($request->hasFile('MainImage')) {
-                $MainImagePath = $request->file('MainImage')->store(Product::storageFolder);
-                $Product->MainImage = $MainImagePath;
+            if ($request->hasFile('mainImage')) {
+                $MainImagePath = $request->file('mainImage')->store(Product::storageFolder);
+                $Product->mainImage = $MainImagePath;
             }
 
            $Product->save();
