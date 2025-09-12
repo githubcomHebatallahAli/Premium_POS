@@ -40,11 +40,11 @@ class ProductVariantRequest extends FormRequest
             'variants.*.size' => 'nullable|string',
             'variants.*.clothes' => 'nullable|in:sm,md,lg,xl,2xl,3xl,4xl,5xl,6xl,+xl',
             'variants.*.sellingPrice' => 'nullable|numeric|min:0',
-            'variants.*.barcode' => 'nullable|string|unique:product_variants,barcode,' . ($this->variant_id ?? ''),
+            'variants.*.barcode' => 'nullable|string',
             'variants.*.sku' => 'nullable|string|unique:product_variants,sku',
             'variants.*.notes' => 'nullable|string',
-             'variants.*.image_ids'   => 'nullable|array',
-            'variants.*.image_ids.*' => 'exists:images,id',
+            'variants.*.images'   => 'nullable|array',
+            'variants.*.images.*' => 'nullable|image|mimes:jpg,jpeg,png,gif,svg',
         ];
     }
 

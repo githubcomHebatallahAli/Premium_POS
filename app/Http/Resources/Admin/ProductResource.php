@@ -11,7 +11,7 @@ class ProductResource extends JsonResource
 {
     public function toArray($request)
     {
-        $response = [
+        return [
             'id' => $this->id,
             'name' => $this->name,
             'sellingPrice' => $this->sellingPrice,
@@ -32,42 +32,8 @@ class ProductResource extends JsonResource
             'barcode' => $this->barcode,
             'sku' => $this->sku,
             'creationDate' => $this->creationDate,
-           'images' => $this->whenLoaded('images', function () {
-    return $this->images->map(fn($img) => [
-        'id' => $img->id,
-        'name' => $img->name,
-        'url' => url($img->image),
-    ]);
-}),
-           
+            'mainImage' => $this->mainImage,
+            'variants' => ProductVariantResource::collection($this->whenLoaded('variants')), 
         ];
-
-        if ($this->hasRealVariants()) {
-            $response['variants'] = ProductVariantResource::collection($this->whenLoaded('variants'));
-        }
-
-        return $response;
-    }
-    
-    private function hasRealVariants()
-    {
-        if (!$this->relationLoaded('variants')) {
-            return false;
-        }
-        
-    
-        if ($this->variants->count() > 1) {
-            return true;
-        }
-        
-        if ($this->variants->count() === 1) {
-            $variant = $this->variants->first();
-          
-            return $variant->color !== null || 
-                   $variant->size !== null || 
-                   $variant->clothes !== null;
-        }
-        
-        return false;
-    }
+}
 }

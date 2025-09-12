@@ -18,8 +18,9 @@ return new class extends Migration
             $table->string('name');
             $table->decimal('sellingPrice');
             $table->String('country')->nullable();
+            $table->String('mainImage')->nullable();
             $table->string('sku')->nullable()->unique();
-            $table->String('barcode')->nullable()->unique();
+            $table->String('barcode')->nullable();
             $table->timestamp('creationDate')->nullable();
             $table->text('description')->nullable();
             $table->softDeletes();

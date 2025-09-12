@@ -14,6 +14,7 @@ class Product extends Model
         'category_id',
         'brand_id',
         'name',
+        'mainImage',
         'sellingPrice',
         'creationDate',
         'country',
@@ -21,13 +22,6 @@ class Product extends Model
         'barcode',
         'description',
     ];
-
-            public function images()
-    {
-        return $this->belongsToMany(Image::class, 'product_images', 'product_id', 'image_id');
-                    
-    }
-
 
 
     protected static function boote()

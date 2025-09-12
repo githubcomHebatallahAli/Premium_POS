@@ -30,12 +30,9 @@ class ProductRequest extends FormRequest
             'sellingPrice' => 'required|numeric|min:0',
             'mainImage.*'=>'nullable|image|mimes:jpg,jpeg,png,gif,svg',
             'creationDate'=> 'nullable|date_format:Y-m-d H:i:s',
-            // 'color' => 'nullable|string',
-            // 'size' => 'nullable|string',
-            // 'clothes' => 'nullable|string',
             'country' => 'nullable|string',
             'sku' => 'nullable|string|unique:products,sku,'.$this->id,
-            'barcode' => 'nullable|string|unique:products,barcode,'.$this->id, 
+            'barcode' => 'nullable|string', 
             'description' => 'nullable|string',
         ];
     }

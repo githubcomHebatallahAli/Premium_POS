@@ -12,6 +12,7 @@ class ProductVariantResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'product_id' => $this->id,
             'color' => $this->color,
             'size' => $this->size,
             'clothes' => $this->clothes,
@@ -20,14 +21,7 @@ class ProductVariantResource extends JsonResource
             'barcode' => $this->barcode,
             'notes' => $this->notes,
             'creationDate' => $this->creationDate,
-         'images' => $this->whenLoaded('images', function () {
-    return $this->images->map(fn($img) => [
-        'id' => $img->id,
-        'name' => $img->name,
-        'url' => url($img->image),
-    ]);
-}),
-
+            'images' => $this->images
         ];
     }
 }

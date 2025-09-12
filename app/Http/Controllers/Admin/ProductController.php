@@ -137,9 +137,6 @@ $this->authorize('manage_users');
                 "name" => $request->name,
                 "sellingPrice" => $formattedSellingPrice,
                 'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
-                // 'color' => $request->color,
-                // 'size' => $request->size,
-                // 'clothes' => $request->clothes,
                 'country' => $request->country,
                 'barcode' => $request->barcode,
                 'sku' => $request->sku,
@@ -161,7 +158,7 @@ $this->authorize('manage_users');
         public function edit(string $id)
         {
             $this->authorize('manage_users');
-            $Product = Product::with(['category','brand'])->find($id);
+            $Product = Product::with(['category','brand','variants'])->find($id);
 
             if (!$Product) {
                 return response()->json([
@@ -195,14 +192,11 @@ $this->authorize('manage_users');
                 "brand_id" => $request->brand_id,
                 "name" => $request->name,
                 "sellingPrice" => $formattedSellingPrice,
-                // 'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
-                // 'color' => $request->color,
-                // 'size' => $request->size,
-                // 'clothes' => $request->clothes,
                 'country' => $request->country,
                 'barcode' => $request->barcode,
                 'sku' => $request->sku,
                 'description' => $request->description,
+                'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
             ]);
 
             if ($request->hasFile('MainImage')) {

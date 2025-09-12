@@ -12,6 +12,7 @@ class ProductVariant extends Model
     const storageFolder= 'ProductVariants';
     protected $fillable = [
         'product_id',
+        'images',
         'color',
         'size',
         'clothes',
@@ -22,16 +23,16 @@ class ProductVariant extends Model
         'notes',
     ];
 
-        public function images()
-    {
-        return $this->belongsToMany(Image::class, 'variant_images', 'product_variant_id', 'image_id');
-                    
-    }
 
-    public function product()
+
+    public function product() 
     {
         return $this->belongsTo(Product::class);
     }
+
+    protected $casts = [
+        'images' => 'array',
+    ];
 
     
 
