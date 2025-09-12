@@ -126,6 +126,11 @@ $this->authorize('manage_users');
     ]);
 }
 
+  private function generateProductSku(string $name): string
+    {
+        $random = Str::upper(Str::random(4));
+        return $name . '-' . $random;
+    }
 
     public function create(ProductRequest $request)
     {
@@ -141,13 +146,14 @@ $this->authorize('manage_users');
                 'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
                 'country' => $request->country,
                 'barcode' => $request->barcode,
-                'sku' => $this->generateProductSku($request['name']),
                 'description' => $request->description,
+                'sku' => $this->generateProductSku($request['name']),
             ]);
 
-            if ($request->hasFile('mainImage')) {
-                $MainImagePath = $request->file('mainImage')->store(Product::storageFolder);
-                $Product->mainImage = $MainImagePath;
+
+            if ($request->hasFile('MainImage')) {
+                $MainImagePath = $request->file('MainImage')->store(Product::storageFolder);
+                $Product->MainImage = $MainImagePath;
             }
 
            $Product->save();
@@ -157,11 +163,7 @@ $this->authorize('manage_users');
         ]);
         }
 
-            private function generateProductSku(string $name): string
-    {
-        $random = Str::upper(Str::random(4));
-        return $name . '-' . $random;
-    }
+
 
         public function edit(string $id)
         {
@@ -196,13 +198,13 @@ $this->authorize('manage_users');
 
         // $this->authorize('update',$Product);
            $Product->update([
-                "category_id" => $request->category_id,
+                "product_id" => $request->category_id,
                 "brand_id" => $request->brand_id,
                 "name" => $request->name,
                 "sellingPrice" => $formattedSellingPrice,
                 'country' => $request->country,
                 'barcode' => $request->barcode,
-                'sku' => $this->generateProductSku($request['name']),
+                // 'sku' => $this->generateProductSku($request['name']),
                 'description' => $request->description,
                 'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
             ]);

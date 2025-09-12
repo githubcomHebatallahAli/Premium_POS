@@ -4,61 +4,49 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ProductVariantRequest;
-use App\Http\Resources\Admin\ProductResource;
 use App\Http\Resources\Admin\ProductVariantResource;
-use App\Http\Resources\Admin\ShowAllProductResource;
-use App\Models\Product;
 use App\Models\ProductVariant;
-use App\Services\ProductService;
 use App\Traits\ManagesModelsTrait;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 
-class ProductVariantController extends Controller
+class ProductVariantVariantController extends Controller
 {
     use ManagesModelsTrait;
-
-
-    public function destroy(string $id){
-
-    return $this->destroyModel(Product::class, ProductResource::class, $id);
-    }
-
-    public function showDeleted(){
+        public function create(ProductVariantRequest $request)
+    {
         $this->authorize('manage_users');
-    $Products=Product::onlyTrashed()->get();
-    return response()->json([
-        'data' =>ProductResource::collection($Products),
-        'message' => "Show Deleted Products Successfully."
-    ]);
-    }
+        // $this->authorize('create',ProductVariant::class);
+        $formattedSellingPrice = number_format($request->sellingPrice, 2, '.', '');
+      
+           $ProductVariant =ProductVariant::create ([
+                "product_id" => $request->product_id,
+                "sellingPrice" => $formattedSellingPrice,
+                'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
+                'color' => $request->color,
+                'size' => $request->size,
+                'clothes' => $request->clothes,
+                'barcode' => $request->barcode,
+                'sku' => $this->generateVariantSku($request->name, $request->all()),
+                'notes' => $request->notes,
+            ]);
 
-    public function restore(string $id)
+            if ($request->hasFile('mainImage')) {
+                $MainImagePath = $request->file('mainImage')->store(ProductVariant::storageFolder);
+                $ProductVariant->mainImage = $MainImagePath;
+            }
+
+           $ProductVariant->save();
+           return response()->json([
+            'data' =>new ProductVariantResource($ProductVariant),
+            'message' => "Variant Created Successfully."
+        ]);
+        }
+
+    private function generateVariantSku(string $productName, array $variantData): string
     {
-       $this->authorize('manage_users');
-    $Product = Product::withTrashed()->where('id', $id)->first();
-    if (!$Product) {
-        return response()->json([
-            'message' => "Product not found."
-        ], 404);
-    }
-    $Product->restore();
-    return response()->json([
-        'data' =>new ProductVariantResource($Product),
-        'message' => "Restore ProductVariant By Id Successfully."
-    ]);
-    }
-
-    public function forceDelete(string $id){
-
-        return $this->forceDeleteModel(ProductVariant::class, $id);
-    }
-
-        private function generateVariantSku(Product $product, array $variantData): string
-    {
-        $base = $product->name;
+        $base = $productName;
         $color = $variantData['color'] ?? null;
         $size = $variantData['size'] ?? null;
         $clothes = $variantData['clothes'] ?? null;
@@ -72,4 +60,100 @@ class ProductVariantController extends Controller
 
         return implode('-', $skuParts) . '-' . $random;
     }
+
+        public function edit(string $id)
+        {
+            $this->authorize('manage_users');
+            $ProductVariant = ProductVariant::with(['product'])->find($id);
+
+            if (!$ProductVariant) {
+                return response()->json([
+                    'message' => "Variant not found."
+                ], 404);
+            }
+
+            // $this->authorize('edit',$ProductVariant);
+
+            return response()->json([
+                'data' => new ProductVariantResource($ProductVariant),
+                'message' => "Edit Variant By ID Successfully."
+            ]);
+        }
+
+        public function update(ProductVariantRequest $request, string $id)
+        {
+            $this->authorize('manage_users');
+            $formattedSellingPrice = number_format($request->sellingPrice, 2, '.', '');
+           
+           $ProductVariant =ProductVariant::findOrFail($id);
+           if (!$ProductVariant) {
+            return response()->json([
+                'message' => "Variant not found."
+            ], 404);
+        }
+
+        // $this->authorize('update',$ProductVariant);
+           $ProductVariant->update([
+                "category_id" => $request->category_id,
+                "brand_id" => $request->brand_id,
+                "name" => $request->name,
+                "sellingPrice" => $formattedSellingPrice,
+                'country' => $request->country,
+                'barcode' => $request->barcode,
+                'sku' => $this->generateVariantSku($request->name, $request->all()),
+                'description' => $request->description,
+                'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
+            ]);
+
+            if ($request->hasFile('MainImage')) {
+                if ($ProductVariant->MainImage) {
+                    Storage::disk('public')->delete( $ProductVariant->MainImage);
+                }
+                $MainImagePath = $request->file('MainImage')->store('ProductVariants', 'public');
+                 $ProductVariant->MainImage = $MainImagePath;
+            }
+            $ProductVariant->save();
+
+           return response()->json([
+            'data' =>new ProductVariantResource($ProductVariant),
+            'message' => " Update Variant By Id Successfully."
+        ]);
+    }
+
+
+    public function destroy(string $id){
+
+    return $this->destroyModel(ProductVariant::class, ProductVariantResource::class, $id);
+    }
+
+    public function showDeleted(){
+        $this->authorize('manage_users');
+    $ProductVariants=ProductVariant::onlyTrashed()->get();
+    return response()->json([
+        'data' =>ProductVariantResource::collection($ProductVariants),
+        'message' => "Show Deleted Variants Successfully."
+    ]);
+    }
+
+    public function restore(string $id)
+    {
+       $this->authorize('manage_users');
+    $ProductVariant = ProductVariant::withTrashed()->where('id', $id)->first();
+    if (!$ProductVariant) {
+        return response()->json([
+            'message' => "Variant not found."
+        ], 404);
+    }
+    $ProductVariant->restore();
+    return response()->json([
+        'data' =>new ProductVariantResource($ProductVariant),
+        'message' => "Restore ProductVariantVariant By Id Successfully."
+    ]);
+    }
+
+    public function forceDelete(string $id){
+
+        return $this->forceDeleteModel(ProductVariant::class, $id);
+    }
+
 }
