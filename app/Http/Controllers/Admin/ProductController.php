@@ -184,45 +184,53 @@ $this->authorize('manage_users');
             ]);
         }
 
-        public function update(ProductRequest $request, string $id)
-        {
-            $this->authorize('manage_users');
-            $formattedSellingPrice = number_format($request->sellingPrice, 2, '.', '');
-           
-           $Product =Product::findOrFail($id);
-           if (!$Product) {
-            return response()->json([
-                'message' => "Product not found."
-            ], 404);
-        }
+public function update(ProductRequest $request, string $id)
+{
+    $this->authorize('manage_users');
 
-        // $this->authorize('update',$Product);
-           $Product->update([
-                "product_id" => $request->category_id,
-                "brand_id" => $request->brand_id,
-                "name" => $request->name,
-                "sellingPrice" => $formattedSellingPrice,
-                'country' => $request->country,
-                'barcode' => $request->barcode,
-                'sku' => $this->generateProductSku($request['name']),
-                'description' => $request->description,
-                'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
-            ]);
+    $formattedSellingPrice = number_format($request->sellingPrice, 2, '.', '');
 
-            if ($request->hasFile('MainImage')) {
-                if ($Product->MainImage) {
-                    Storage::disk('public')->delete( $Product->MainImage);
-                }
-                $MainImagePath = $request->file('MainImage')->store('Products', 'public');
-                 $Product->MainImage = $MainImagePath;
-            }
-            $Product->save();
-
-           return response()->json([
-            'data' =>new ProductResource($Product),
-            'message' => " Update Product By Id Successfully."
-        ]);
+    $Product = Product::findOrFail($id);
+    if (!$Product) {
+        return response()->json([
+            'message' => "Product not found."
+        ], 404);
     }
+    // $this->authorize('update', $Product);
+    $sku = $Product->sku;
+
+    if ($request->name !== $Product->name) {
+        $sku = $this->generateProductSku($request->name);
+    }
+
+    $Product->update([
+        "category_id" => $request->category_id,
+        "brand_id" => $request->brand_id, 
+        "name" => $request->name,
+        "sellingPrice" => $formattedSellingPrice,
+        'country' => $request->country,
+        'barcode' => $request->barcode,
+        'sku' => $sku,
+        'description' => $request->description,
+        'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
+    ]);
+
+    if ($request->hasFile('MainImage')) {
+        if ($Product->MainImage) {
+            Storage::disk('public')->delete($Product->MainImage);
+        }
+        $MainImagePath = $request->file('MainImage')->store('Products', 'public');
+        $Product->MainImage = $MainImagePath;
+    }
+
+    $Product->save();
+
+    return response()->json([
+        'data' => new ProductResource($Product),
+        'message' => "Update Product By Id Successfully."
+    ]);
+}
+
 
     public function destroy(string $id){
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ProductVariantRequest;
 use App\Http\Resources\Admin\ProductVariantResource;
+use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Traits\ManagesModelsTrait;
 use Illuminate\Support\Facades\Storage;
@@ -19,6 +20,7 @@ class ProductVariantVariantController extends Controller
         $this->authorize('manage_users');
         // $this->authorize('create',ProductVariant::class);
         $formattedSellingPrice = number_format($request->sellingPrice, 2, '.', '');
+         $product = Product::findOrFail($request->product_id);
       
            $ProductVariant =ProductVariant::create ([
                 "product_id" => $request->product_id,
@@ -28,7 +30,7 @@ class ProductVariantVariantController extends Controller
                 'size' => $request->size,
                 'clothes' => $request->clothes,
                 'barcode' => $request->barcode,
-                'sku' => $this->generateVariantSku($request->name, $request->all()),
+                'sku' => $this->generateVariantSku($product->name, $request->all()),
                 'notes' => $request->notes,
             ]);
 
@@ -80,45 +82,48 @@ class ProductVariantVariantController extends Controller
             ]);
         }
 
-        public function update(ProductVariantRequest $request, string $id)
-        {
-            $this->authorize('manage_users');
-            $formattedSellingPrice = number_format($request->sellingPrice, 2, '.', '');
-           
-           $ProductVariant =ProductVariant::findOrFail($id);
-           if (!$ProductVariant) {
-            return response()->json([
-                'message' => "Variant not found."
-            ], 404);
-        }
+public function update(ProductVariantRequest $request, string $id)
+{
+    $this->authorize('manage_users');
 
-        // $this->authorize('update',$ProductVariant);
-           $ProductVariant->update([
-                "category_id" => $request->category_id,
-                "brand_id" => $request->brand_id,
-                "name" => $request->name,
-                "sellingPrice" => $formattedSellingPrice,
-                'country' => $request->country,
-                'barcode' => $request->barcode,
-                'sku' => $this->generateVariantSku($request->name, $request->all()),
-                'description' => $request->description,
-                'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
-            ]);
+    $variant = ProductVariant::findOrFail($id);
 
-            if ($request->hasFile('MainImage')) {
-                if ($ProductVariant->MainImage) {
-                    Storage::disk('public')->delete( $ProductVariant->MainImage);
-                }
-                $MainImagePath = $request->file('MainImage')->store('ProductVariants', 'public');
-                 $ProductVariant->MainImage = $MainImagePath;
-            }
-            $ProductVariant->save();
+    $product = Product::findOrFail($variant->product_id);
 
-           return response()->json([
-            'data' =>new ProductVariantResource($ProductVariant),
-            'message' => " Update Variant By Id Successfully."
-        ]);
+    $updateData = [
+        "sellingPrice" => number_format($request->sellingPrice, 2, '.', ''),
+        'color' => $request->color,
+        'size' => $request->size,
+        'clothes' => $request->clothes,
+        'barcode' => $request->barcode,
+        'notes' => $request->notes,
+    ];
+
+    
+    if (
+        $product->name !== $variant->product->name ||
+        $request->color !== $variant->color ||
+        $request->size !== $variant->size ||
+        $request->clothes !== $variant->clothes
+    ) {
+        $updateData['sku'] = $this->generateVariantSku($product->name, $request->all());
+    } else {
+        $updateData['sku'] = $variant->sku; 
     }
+
+    if ($request->hasFile('images')) {
+        $MainImagePath = $request->file('mainImage')->store(ProductVariant::storageFolder);
+        $updateData['mainImage'] = $MainImagePath;
+    }
+
+    $variant->update($updateData);
+
+    return response()->json([
+        'data' => new ProductVariantResource($variant),
+        'message' => "Variant Updated Successfully."
+    ]);
+}
+
 
 
     public function destroy(string $id){
