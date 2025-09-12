@@ -53,34 +53,36 @@ class ProductController extends Controller
         // $this->authorize('showAll',Product::class);
           $this->authorize('manage_users');
       
-        $Product = Product::with(['category','brand']);
+  $searchTerm = $request->input('search', '');
+        $query = Product::with(['category', 'brand', 'variants'])
+
         
-    $query = Product::query();
+            ->where('name', 'like', '%' . $searchTerm . '%');
 
-    if ($request->filled('brand_id')) {
-        $query->where('brand_id', $request->brand_id);
-    }
+        if ($request->filled('brand_id')) {
+            $query->where('brand_id', $request->brand_id);
+        }
 
-    if ($request->filled('category_id')) {
-        $query->where('category_id', $request->category_id);
-    }
-    // if ($request->filled('color')) {
-    //     $query->where('color', $request->color);
-    // }
-    // if ($request->filled('size')) {
-    //     $query->where('size', $request->size);
-    // }
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
 
-    // if ($request->filled('clothes')) {
-    //     $query->where('clothes', $request->clothes);
-    // }
+        if ($request->filled('color') || $request->filled('size') || $request->filled('clothes')) {
+            $query->whereHas('variants', function ($q) use ($request) {
+                if ($request->filled('color')) {
+                    $q->where('color', $request->color);
+                }
+                if ($request->filled('size')) {
+                    $q->where('size', $request->size);
+                }
+                if ($request->filled('clothes')) {
+                    $q->where('clothes', $request->clothes);
+                }
+            });
+        }
 
-    // if ($request->filled('endDate')) {
-    //     $query->where('endDate', $request->endDate);
-    // }
 
-
-        $Product = $Product->orderBy('created_at', 'desc')
+        $Product = $query->orderBy('created_at', 'desc')
                            ->paginate(10);
 
         return response()->json([
