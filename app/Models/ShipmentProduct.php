@@ -20,18 +20,18 @@ class ShipmentProduct extends Model
     ];
 
 
-        public function shipment()
-    {
-        return $this->belongsTo(Shipment::class);
-    }
+    //     public function shipment()
+    // {
+    //     return $this->belongsTo(Shipment::class);
+    // }
 
-    public function product()
-    {
-        return $this->belongsTo(Product::class);
-    }
+    // public function product()
+    // {
+    //     return $this->belongsTo(Product::class);
+    // }
 
-    public function variant()
-    {
-        return $this->belongsTo(ProductVariant::class, 'product_variant_id');
-    }
+    // public function variant()
+    // {
+    //     return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+    // }
 }
