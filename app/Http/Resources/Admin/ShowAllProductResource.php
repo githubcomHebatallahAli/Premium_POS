@@ -2,19 +2,16 @@
 
 namespace App\Http\Resources\Admin;
 
+use App\Models\ShipmentProduct;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class ShowAllProductResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
-        $totalQuantity = $this->shipments()->sum('quantity');
+        $totalQuantity = ShipmentProduct::where('product_id', $this->id)->sum('quantity');
+        // $totalQuantity = $this->shipments()->sum('shipment_products.quantity');
         
         return [
             "id" => $this -> id,

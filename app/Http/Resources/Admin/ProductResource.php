@@ -2,8 +2,9 @@
 
 namespace App\Http\Resources\Admin;
 
-use Illuminate\Http\Request;
+use App\Models\ShipmentProduct;
 
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 
@@ -11,6 +12,8 @@ class ProductResource extends JsonResource
 {
     public function toArray($request)
     {
+        // $totalQuantity = $this->shipments()->sum('shipment_products.quantity');
+        $totalQuantity = ShipmentProduct::where('product_id', $this->id)->sum('quantity');
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -33,6 +36,7 @@ class ProductResource extends JsonResource
             'sku' => $this->sku,
             'creationDate' => $this->creationDate,
             'mainImage' => $this->mainImage,
+            'totalQuantity' => $totalQuantity,
             'variants' => ProductVariantResource::collection($this->whenLoaded('variants')), 
         ];
 }
