@@ -80,8 +80,6 @@ class ProductController extends Controller
                 }
             });
         }
-
-
         $Product = $query->orderBy('created_at', 'desc')
                            ->paginate(10);
 
@@ -105,7 +103,8 @@ class ProductController extends Controller
           $this->authorize('manage_users');
         // $this->authorize('showAllProduct',Product::class);
 
-        $Product = Product::with(['category','brand'])->get();
+        $Product = Product::with(['category','brand','variants'])
+        ->get();
 
         return response()->json([
             'data' => ShowAllProductResource::collection($Product),
