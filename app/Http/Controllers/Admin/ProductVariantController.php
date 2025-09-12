@@ -103,15 +103,19 @@ public function update(ProductVariantRequest $request, string $id)
     ];
 
    
-    if (
-        $product->name !== $variant->product->name ||
-        $request->color !== $variant->color ||
-        $request->size !== $variant->size ||
+  $skuFieldsChanged = (
+        $product->name   !== $variant->product->name ||
+        $request->color  !== $variant->color ||
+        $request->size   !== $variant->size ||
         $request->clothes !== $variant->clothes
-    ) {
+    );
+
+    if ($skuFieldsChanged) {
+    
         $updateData['sku'] = $this->generateVariantSku($product->name, $request->all());
     } else {
-        $updateData['sku'] = $variant->sku; 
+  
+        $updateData['sku'] = $variant->sku;
     }
 
     $variant->update($updateData);
