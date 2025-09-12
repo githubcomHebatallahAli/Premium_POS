@@ -25,7 +25,7 @@ class ProductRequest extends FormRequest
     {
         return [
             'category_id' => 'required|exists:categories,id',
-            'brand_id' => 'required|exists:brands,id',
+            'brand_id' => 'nullable|exists:brands,id',
             'name' => 'required|string',
             'sellingPrice' => 'required|numeric|min:0',
             'mainImage.*'=>'nullable|image|mimes:jpg,jpeg,png,gif,svg',

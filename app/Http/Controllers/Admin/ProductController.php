@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\Product;
-use Illuminate\Http\Request;
-use App\Traits\ManagesModelsTrait;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\Admin\ProductRequest;
 use App\Http\Resources\Admin\ProductResource;
 use App\Http\Resources\Admin\ShowAllProductResource;
+use App\Models\Product;
+use App\Traits\ManagesModelsTrait;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
@@ -139,7 +140,7 @@ $this->authorize('manage_users');
                 'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
                 'country' => $request->country,
                 'barcode' => $request->barcode,
-                'sku' => $request->sku,
+                'sku' => $this->generateProductSku($request['name']),
                 'description' => $request->description,
             ]);
 
@@ -154,6 +155,12 @@ $this->authorize('manage_users');
             'message' => "Product Created Successfully."
         ]);
         }
+
+            private function generateProductSku(string $name): string
+    {
+        $random = Str::upper(Str::random(4));
+        return $name . '-' . $random;
+    }
 
         public function edit(string $id)
         {
