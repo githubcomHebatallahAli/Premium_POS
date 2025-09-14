@@ -43,7 +43,7 @@ class ShipmentController extends Controller
 
 public function edit($id)
 {
-    $shipment = Shipment::with(['products', 'supplier','variant'])->findOrFail($id);
+    $shipment = Shipment::with(['products.variants', 'supplier', 'shipmentProducts.variant'])->findOrFail($id);
     $this->shipmentService->recalculateTotals($shipment);
 
     return response()->json([
