@@ -86,7 +86,7 @@ public function showAll(Request $request)
         'data' => $shipments->map(function ($shipment) {
             return [
                 'id' => $shipment->id,
-                'supplier_name' => $shipment->supplier->name,
+                'supplier_name' => $shipment->supplier->supplierName,
                 'importer' => $shipment->importer,
                 'invoiceAfterDiscount' => $shipment->invoiceAfterDiscount,
                 'creationDate' => $shipment->creationDate,
