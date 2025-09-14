@@ -55,26 +55,16 @@ public function create(array $data): Shipment
                 'endDate' => $productData['endDate'] ?? null,
             ]);
 
-                 // إضافة إلى المخزون
-                // Inventory::create([
-                //     'product_variant_id' => $productData['product_variant_id'],
-                //     'shipment_product_id' => $shipmentProduct->id,
-                //     'remaining_quantity' => $productData['quantity'],
-                //     'purchase_price' => $productData['purchase_price'],
-                //     'expiry_date' => $productData['expiry_date'] ?? null,
-                // ]);
-
             $total += $totalPrice;
         }
 
-        
         $this->calculateTotals($shipment, $total);
-
-    
         $shipment->updateShipmentProductsCount();
-$shipment->fresh(['products.variants', 'supplier', 'shipmentProducts.variant']);
+        $shipment->fresh(['products.variants', 'supplier', 'shipmentProducts.variant']);
 
-    });
+        // Return the shipment from the transaction callback
+        return $shipment;
+    }); // The transaction will return the value returned by this callback
 }
 
 public function calculateTotals(Shipment $shipment, float $total): void
