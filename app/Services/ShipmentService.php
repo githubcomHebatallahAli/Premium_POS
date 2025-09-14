@@ -62,9 +62,9 @@ public function create(array $data): Shipment
         $shipment->updateShipmentProductsCount();
         $shipment->fresh(['products.variants', 'supplier', 'shipmentProducts.variant']);
 
-        // Return the shipment from the transaction callback
+        
         return $shipment;
-    }); // The transaction will return the value returned by this callback
+    }); 
 }
 
 public function calculateTotals(Shipment $shipment, float $total): void
@@ -112,9 +112,10 @@ public function calculateTotals(Shipment $shipment, float $total): void
 public function update(Shipment $shipment, array $data): Shipment
 {
     return DB::transaction(function () use ($shipment, $data) {
-        
-        $shipment->products()->detach();
+        // حذف جميع المنتجات المرتبطة بالشحنة باستخدام نموذج Pivot
+        $shipment->shipmentProducts()->delete();
 
+        // تحديث بيانات الشحنة الأساسية
         $shipment->update([
             'supplier_id' => $data['supplier_id'],
             'importer' => $data['importer'] ?? $shipment->importer,
@@ -137,19 +138,19 @@ public function update(Shipment $shipment, array $data): Shipment
 
             $product = Product::findOrFail($productId);
 
-            
             $unitPrice = $productData['unitPrice'] ?? null;
-            
             
             if (empty($unitPrice) && isset($productData['price'])) {
                 $unitPrice = $productData['price'] / $productData['quantity'];
             }
 
-            
             $totalPrice = $productData['price'] ?? $productData['quantity'] * $unitPrice;
 
-            
-            $shipment->products()->attach($product->id, [
+            // إنشاء سجل جديد في جدول المنتجات المرتبطة باستخدام نموذج Pivot
+            ShipmentProduct::create([
+                'shipment_id' => $shipment->id,
+                'product_id' => $product->id,
+                'product_variant_id' => $productData['product_variant_id'] ?? null,
                 'quantity' => $productData['quantity'],
                 'unitPrice' => $unitPrice,
                 'price' => $totalPrice,
@@ -159,13 +160,14 @@ public function update(Shipment $shipment, array $data): Shipment
             $total += $totalPrice;
         }
 
-        
+        // حساب الإجماليات
         $this->calculateTotals($shipment, $total);
 
-       
+        // تحديث عدد منتجات الشحنة
         $shipment->updateShipmentProductsCount();
 
-        return $shipment->fresh(['products', 'supplier']);
+        // إعادة الشحنة مع العلانات المحدثة
+        return $shipment->fresh(['products.variants', 'supplier', 'shipmentProducts.variant']);
     });
 }
 
