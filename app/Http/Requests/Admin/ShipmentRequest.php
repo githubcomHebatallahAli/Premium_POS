@@ -38,7 +38,7 @@ class ShipmentRequest extends FormRequest
             'taxType' => 'nullable|in:pounds,percentage',
             'payment'=> 'nullable|in:visa,cash,wallet,instapay',
             'description' => 'nullable|string',
-             'products' => 'required|array',
+            'products' => 'required|array',
             'products.*.id' => 'required|exists:products,id',
             'products.*.product_variant_id' => 'nullable|exists:product_variants,id',
             'products.*.quantity' => 'required|integer|min:1',

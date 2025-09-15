@@ -41,6 +41,7 @@ class ShipmentProductResource extends JsonResource
                     'name' => $product->name,
                     'product_variant_id' => $product->pivot->product_variant_id,
                     'quantity' => $product->pivot->quantity,
+                    'remainingQuantity' => $product->pivot->remainingQuantity,
                     'price' => $product->pivot->price,
                     'unitPrice' => $product->pivot->unitPrice,
                     'returnReason' => $product->pivot->returnReason,

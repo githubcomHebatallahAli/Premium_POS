@@ -16,7 +16,8 @@ class ShipmentProduct extends Model
         'unitPrice',
         'returnReason',
         'endDate',
-        'product_variant_id'
+        'product_variant_id',
+        'remainingQuantity',
     ];
 
 

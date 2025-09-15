@@ -11,7 +11,8 @@ class InvoiceProduct extends Model
     protected $fillable = [
         'product_id',
         'invoice_id',
-        'shipment_id',
+        'shipment_product_id',
+        'product_variant_id',
         'quantity',
         'total',
         'profit',
