@@ -50,6 +50,7 @@ public function create(array $data): Shipment
                 'product_id' => $product->id,
                 'product_variant_id' => $productData['product_variant_id'],
                 'quantity' => $productData['quantity'],
+                'remainingQuantity' => $productData['quantity'],
                 'unitPrice' => $unitPrice,
                 'price' => $totalPrice,
                 'endDate' => $productData['endDate'] ?? null,
