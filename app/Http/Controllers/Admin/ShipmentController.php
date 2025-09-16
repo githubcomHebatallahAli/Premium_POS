@@ -200,7 +200,7 @@ public function partialReturn(Request $request, $id)
 
     public function showAllShipmentProduct(Request $request)
     {
-        $query = ShipmentProduct::with(['product', 'variant', 'shipment.supplier'])
+        $query = ShipmentProduct::with(['product', 'variant'])
                     ->where('remainingQuantity', '>', 0);
 
         $shipmentProducts = $query->orderBy('created_at', 'asc')->get();
