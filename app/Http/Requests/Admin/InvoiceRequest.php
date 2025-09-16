@@ -40,7 +40,11 @@ class InvoiceRequest extends FormRequest
             'paidAmount' => 'nullable|numeric|min:0',
             'products' => 'required|array',
             'products.*.id' => 'required|exists:products,id',
-            "products.*.shipment_product_id" => "required_if:pullType,manual|exists:shipment_products,id",
+            'products.*.shipment_product_id' => [
+            'nullable',
+            'required_if:pullType,manual',
+            'exists:shipment_products,id'
+        ],
             'products.*.product_variant_id' => 'nullable|exists:product_variants,id',
             'products.*.quantity' => 'required|integer|min:1',
             'products.*.returnReason' => 'nullable|string',
