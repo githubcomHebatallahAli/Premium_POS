@@ -19,5 +19,25 @@ class InvoiceProduct extends Model
         'returnReason'
     ];
 
+        public function invoice()
+    {
+        return $this->belongsTo(Invoice::class);
+    }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
+
+    public function shipmentProduct()
+    {
+        return $this->belongsTo(ShipmentProduct::class, 'shipment_product_id');
+    }
+
+    public function variant()
+    {
+        return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+    }
+
     
 }

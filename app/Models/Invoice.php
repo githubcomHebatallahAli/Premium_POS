@@ -89,33 +89,9 @@ public function getInvoiceProductCountAttribute()
     return $this->attributes['invoiceProductCount'] ?? 0;
 }
 
-
-// protected static function boot()
-// {
-//     parent::boot();
-
-//     // عند الحذف (Soft Delete)
-//     static::deleting(function ($invoice) {
-//         if (!$invoice->isForceDeleting()) { // يتم التحقق إذا كان الحذف Soft Delete فقط
-//             foreach ($invoice->products as $product) {
-//                 $product->increment('quantity', $product->pivot->quantity);
-//             }
-//         }
-//     });
-
-//     // عند الحذف الإجباري (Force Delete)
-//     static::forceDeleted(function ($invoice) {
-//         foreach ($invoice->products as $product) {
-//             $product->increment('quantity', $product->pivot->quantity);
-//         }
-//     });
-
-//     // عند استرجاع الفاتورة (Restore)
-//     static::restored(function ($invoice) {
-//         foreach ($invoice->products as $product) {
-//             $product->decrement('quantity', $product->pivot->quantity);
-//         }
-//     });
-// }
+    public function invoiceProducts()
+    {
+        return $this->hasMany(InvoiceProduct::class);
+    }
 
 }
