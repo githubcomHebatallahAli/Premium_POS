@@ -213,7 +213,7 @@ public function partialReturn(Request $request, $id)
 
     public function editShipmentProduct($id)
     {
-        $shipmentProduct = ShipmentProduct::with(['product', 'variant', 'shipment.supplier'])
+        $shipmentProduct = ShipmentProduct::with(['product', 'variant'])
                             ->findOrFail($id);
 
         return response()->json([
