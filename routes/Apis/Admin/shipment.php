@@ -19,4 +19,7 @@ Route::delete('/forceDelete/shipment/{id}','forceDelete');
 Route::put('/shipment/{id}/update-paid','updatePaidAmount');
 Route::put('/shipment/{id}/full-return','fullReturn');
 Route::post('/shipment/{id}/partial-return','partialReturn');
+Route::get('/showAll/shipmentproduct','showAllShipmentProduct');
+
+Route::get('/edit/shipmentproduct/{id}','editShipmentProduct');
    });

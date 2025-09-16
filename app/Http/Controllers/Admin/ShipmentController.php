@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\UpdatePaidAmountRequest;
 use App\Http\Resources\Admin\ShipmentProductResource;
 use App\Http\Resources\Admin\ShipmentResource;
 use App\Models\Shipment;
+use App\Models\ShipmentProduct;
 use App\Models\Supplier;
 use App\Services\ShipmentService;
 use App\Traits\ManagesModelsTrait;
@@ -195,50 +196,32 @@ public function partialReturn(Request $request, $id)
         'data' => new ShipmentProductResource($returned),
     ]);
 }
+
+
+    public function showAllShipmentProduct(Request $request)
+    {
+        $query = ShipmentProduct::with(['product', 'variant', 'shipment.supplier'])
+                    ->where('remainingQuantity', '>', 0);
+
+        $shipmentProducts = $query->orderBy('created_at', 'asc')->get();
+
+        return response()->json([
+            'data' => $shipmentProducts,
+            'total' => $shipmentProducts->count()
+        ]);
+    }
+
+    public function editShipmentProduct($id)
+    {
+        $shipmentProduct = ShipmentProduct::with(['product', 'variant', 'shipment.supplier'])
+                            ->findOrFail($id);
+
+        return response()->json([
+            'data' => $shipmentProduct
+        ]);
+    }
 }
 
-//     public function showAll(Request $request)
-// {
-//     $this->authorize('showAll', Shipment::class);
 
-//     $searchTerm = $request->input('search', '');
-//     $statusFilter = $request->input('status', '');
-
-//     // $query = Shipment::where('supplierName', 'like', '%' . $searchTerm . '%');
-//     $query = Shipment::with('supplier')
-//     ->when($searchTerm, function ($query) use ($searchTerm) {
-//         $query->whereHas('supplier', function ($q) use ($searchTerm) {
-//             $q->where('supplierName', 'like', '%' . $searchTerm . '%');
-//         });
-//     });
-
-//   if ($request->filled('status') && in_array($statusFilter, ['pending', 'paid', 'partialReturn', 'return'])) {
-//         $query->where('status', $statusFilter);
-//     }
-
-//     $shipments = $query->orderBy('created_at', 'desc')
-//                       ->paginate(10);
-
-//     $paidAmount = Shipment::sum('paidAmount');
-//     $remainingAmount = Shipment::where('status', 'pending')->sum('remainingAmount');
-
-//     return response()->json([
-//         'data' => ShipmentResource::collection($shipments),
-//         'pagination' => [
-//             'total' => $shipments->total(),
-//             'count' => $shipments->count(),
-//             'per_page' => $shipments->perPage(),
-//             'current_page' => $shipments->currentPage(),
-//             'total_pages' => $shipments->lastPage(),
-//             'next_page_url' => $shipments->nextPageUrl(),
-//             'prev_page_url' => $shipments->previousPageUrl()
-//         ],
-//         'statistics' => [
-//             'paid_amount' => number_format($paidAmount, 2, '.', ''),
-//             'remaining_amount' => number_format($remainingAmount, 2, '.', ''),
-//         ],
-//         'message' => "Show All Shipment."
-//     ]);
-// }
 
 
