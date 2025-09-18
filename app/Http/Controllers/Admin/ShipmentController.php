@@ -200,24 +200,24 @@ public function partialReturn(Request $request, $id)
 
     public function showAllShipmentProduct(Request $request)
     {
-        $query = ShipmentProduct::with(['product', 'variant'])
+        $query = ShipmentProduct::with(['product', 'variant', 'shipment.supplier'])
                     ->where('remainingQuantity', '>', 0);
 
         $shipmentProducts = $query->orderBy('created_at', 'asc')->get();
 
         return response()->json([
-            'data' => $shipmentProducts,
+            'data' =>ShipmentProductResource::collection($shipmentProducts) ,
             'total' => $shipmentProducts->count()
         ]);
     }
 
     public function editShipmentProduct($id)
     {
-        $shipmentProduct = ShipmentProduct::with(['product', 'variant'])
+        $shipmentProduct = ShipmentProduct::with(['product', 'variant', 'shipment.supplier'])
                             ->findOrFail($id);
 
         return response()->json([
-            'data' => $shipmentProduct
+            'data' => new ShipmentProductResource($shipmentProduct)
         ]);
     }
 }
