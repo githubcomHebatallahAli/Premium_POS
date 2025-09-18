@@ -29,7 +29,7 @@ class InvoiceResource extends JsonResource
             'taxType' => $this->taxType,
             'returnReason' => $this->returnReason,
 
-            // ✅ المبالغ المالية
+        
             'totalInvoicePrice'   => number_format($this->totalInvoicePrice, 2, '.', ''),
             'discount'            => number_format($this->discount ?? 0, 2, '.', ''),
             'extraAmount'         => number_format($this->extraAmount ?? 0, 2, '.', ''),
