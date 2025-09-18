@@ -206,7 +206,7 @@ public function partialReturn(Request $request, $id)
         $shipmentProducts = $query->orderBy('created_at', 'asc')->get();
 
         return response()->json([
-            'data' => $shipmentProducts,
+            'data' => ShipmentProductResource::collection($shipmentProducts),
             'total' => $shipmentProducts->count()
         ]);
     }
@@ -217,7 +217,7 @@ public function partialReturn(Request $request, $id)
                             ->findOrFail($id);
 
         return response()->json([
-            'data' => $shipmentProduct
+            'data' => new ShipmentProductResource($shipmentProduct)
         ]);
     }
 }
