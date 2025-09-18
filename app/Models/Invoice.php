@@ -47,8 +47,7 @@ class Invoice extends Model
 
     protected static function booted()
 {
-
-    static::created(function ($invoice) {
+     static::created(function ($invoice) {
         $invoice->load('products');
         $invoice->updateInvoiceProductCount();
     });

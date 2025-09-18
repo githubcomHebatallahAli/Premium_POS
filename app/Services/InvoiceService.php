@@ -16,13 +16,13 @@ public function create(array $data): Invoice
             'customerName' => $data['customerName'],
             'customerPhone' => $data['customerPhone'],
             'admin_id' => auth()->id(),
-            'status' => $data['status'] ?? 'completed',
-            'payment' => $data['payment'] ?? 'cash',
+            // 'status' => $data['status'] ?? 'completed',
+            'payment' => $data['payment'] ?? null,
             'pullType' => $data['pullType'],
             'discount' => $data['discount'] ?? 0,
-            'discountType' => $data['discountType'] ?? 'percentage',
+            'discountType' => $data['discountType'] ?? null,
             'extraAmount' => $data['extraAmount'] ?? 0,
-            'taxType' => $data['taxType'] ?? 'percentage',
+            'taxType' => $data['taxType'] ?? null,
             'paidAmount' => $data['paidAmount'] ?? 0,
             'creationDate' => now(),
         ]);
@@ -56,7 +56,7 @@ public function create(array $data): Invoice
 
                     $quantityToTake = min($remainingNeeded, $stock->remainingQuantity); // استخدام الاسم الحالي
                     
-                    // خصم الكمية من المخزون
+                   
                     $stock->decrement('remainingQuantity', $quantityToTake); // استخدام الاسم الحالي
                     
                     // حساب الأسعار (سعر البيع من المنتج - سعر الشراء من الشحنة)
@@ -136,9 +136,9 @@ public function create(array $data): Invoice
                 'payment' => $data['payment'] ?? $invoice->payment,
                 'pullType' => $data['pullType'],
                 'discount' => $data['discount'] ?? 0,
-                'discountType' => $data['discountType'] ?? 'percentage',
+                'discountType' => $data['discountType'] ?? $invoice->discountType,
                 'extraAmount' => $data['extraAmount'] ?? 0,
-                'taxType' => $data['taxType'] ?? 'percentage',
+                'taxType' => $data['taxType'] ?? $invoice->taxType,
                 'paidAmount' => $data['paidAmount'] ?? 0,
             ]);
 
