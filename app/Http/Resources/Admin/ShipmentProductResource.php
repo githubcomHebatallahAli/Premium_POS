@@ -16,11 +16,11 @@ class ShipmentProductResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            "id" => $this -> id,
-            'supplierName' => $this->supplier->supplierName,
-            'importer' => $this -> importer ,
+            "id" => $this->id,
+            'supplierName' => $this->supplier->supplierName ?? null,
+            'importer' => $this->importer,
             'admin' => new AdminRegisterResource($this->admin),
-            'place' => $this ->supplier->place,
+            'place' => $this->supplier->place ?? null,
             "totalPrice" => number_format($this->totalPrice, 2, '.', ''),
             'discount'            => number_format($this->discount ?? 0, 2, '.', ''),
             'extraAmount'         => number_format($this->extraAmount ?? 0, 2, '.', ''),
