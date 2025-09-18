@@ -28,7 +28,7 @@ public function create(array $data): Invoice
         ]);
 
         $total = 0;
-        $profit = 0;
+        // $profit = 0;
 
         foreach ($data['products'] as $productData) {
             $productId = $productData['id'];
@@ -38,12 +38,12 @@ public function create(array $data): Invoice
             $product = Product::findOrFail($productId);
 
             if ($data['pullType'] === 'fifo') {
-                // نظام FIFO
+                
                 $availableStocks = ShipmentProduct::where('product_id', $productId)
                     ->when($variantId, function ($query) use ($variantId) {
                         return $query->where('product_variant_id', $variantId);
                     })
-                    ->where('remainingQuantity', '>', 0) // استخدام الاسم الحالي
+                    ->where('remainingQuantity', '>', 0) 
                     ->orderBy('created_at')
                     ->get();
                 
@@ -59,12 +59,12 @@ public function create(array $data): Invoice
                    
                     $stock->decrement('remainingQuantity', $quantityToTake); // استخدام الاسم الحالي
                     
-                    // حساب الأسعار (سعر البيع من المنتج - سعر الشراء من الشحنة)
+                 
                     $sellingPrice = $product->sellingPrice; // من جدول products
-                    $purchasePrice = $stock->unitPrice; // من جدول shipment_products (سعر الشراء)
+                    $purchasePrice = $stock->unitPrice; 
                     
                     $subTotal = $quantityToTake * $sellingPrice;
-                    $subProfit = ($sellingPrice - $purchasePrice) * $quantityToTake;
+                    // $subProfit = ($sellingPrice - $purchasePrice) * $quantityToTake;
 
                     // إضافة للفاتورة - باستخدام الحقول الموجودة حالياً
                     $invoice->products()->attach($product->id, [
@@ -73,11 +73,11 @@ public function create(array $data): Invoice
                         'quantity' => $quantityToTake,
                         // سيتم حساب total و profit فقط (الحقول الموجودة)
                         'total' => $subTotal,
-                        'profit' => $subProfit,
+                        // 'profit' => $subProfit,
                     ]);
 
                     $lineTotal += $subTotal;
-                    $lineProfit += $subProfit;
+                    // $lineProfit += $subProfit;
                     $remainingNeeded -= $quantityToTake;
                 }
 
@@ -100,7 +100,7 @@ public function create(array $data): Invoice
                 $purchasePrice = $shipmentProduct->unitPrice; // من جدول shipment_products
                 
                 $lineTotal = $sellingPrice * $quantity;
-                $lineProfit = ($sellingPrice - $purchasePrice) * $quantity;
+                // $lineProfit = ($sellingPrice - $purchasePrice) * $quantity;
 
                 $invoice->products()->attach($product->id, [
                     'shipment_product_id' => $shipmentProduct->id,
@@ -108,12 +108,12 @@ public function create(array $data): Invoice
                     'quantity' => $quantity,
                     // استخدام الحقول الموجودة فقط
                     'total' => $lineTotal,
-                    'profit' => $lineProfit,
+                    // 'profit' => $lineProfit,
                 ]);
             }
 
             $total += $lineTotal;
-            $profit += $lineProfit;
+            // $profit += $lineProfit;
         }
 
         // حساب الإجماليات
@@ -166,18 +166,18 @@ public function create(array $data): Invoice
                 $shipmentProduct->decrement('remainingQuantity', $p['quantity']);
 
                 $lineTotal = $product->sellingPrice * $p['quantity'];
-                $lineProfit = ($product->sellingPrice - $shipmentProduct->purchasePrice) * $p['quantity'];
+                // $lineProfit = ($product->sellingPrice - $shipmentProduct->purchasePrice) * $p['quantity'];
 
                 $invoice->products()->attach($product->id, [
                     'shipment_id' => $shipmentProduct->shipment_id,
                     'quantity' => $p['quantity'],
                     'price' => $product->sellingPrice,
                     'total' => $lineTotal,
-                    'profit' => $lineProfit,
+                    // 'profit' => $lineProfit,
                 ]);
 
                 $total += $lineTotal;
-                $profit += $lineProfit;
+                // $profit += $lineProfit;
             }
 
             $calculated = $this->calculateTotals($invoice, $total, $profit);

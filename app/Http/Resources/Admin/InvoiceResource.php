@@ -34,11 +34,11 @@ class InvoiceResource extends JsonResource
             'discount'            => number_format($this->discount ?? 0, 2, '.', ''),
             'extraAmount'         => number_format($this->extraAmount ?? 0, 2, '.', ''),
             'invoiceAfterDiscount'=> number_format($this->invoiceAfterDiscount ?? 0, 2, '.', ''),
-            'profit'              => number_format($this->profit ?? 0, 2, '.', ''),
+            // 'profit'              => number_format($this->profit ?? 0, 2, '.', ''),
             'paidAmount'          => number_format($this->paidAmount ?? 0, 2, '.', ''),
             'remainingAmount'     => number_format($this->remainingAmount ?? 0, 2, '.', ''),
 
-            // ✅ المنتجات
+            
             'products' => $this->products->map(function ($product) {
                 return [
                     'id' => $product->id,
