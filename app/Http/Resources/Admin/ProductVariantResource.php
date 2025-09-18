@@ -11,7 +11,7 @@ class ProductVariantResource extends JsonResource
   
     public function toArray(Request $request): array
     {
-          $totalQuantity = ShipmentProduct::where('product_variant_id', $this->id)->sum('quantity');
+          $totalQuantity = ShipmentProduct::where('product_variant_id', $this->id)->sum('remainingQuantity');
         return [
             'id' => $this->id,
             'product_id' => $this->product_id,

@@ -10,7 +10,7 @@ class ShowAllProductResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $totalQuantity = ShipmentProduct::where('product_id', $this->id)->sum('quantity');
+        $totalQuantity = ShipmentProduct::where('product_id', $this->id)->sum('remainingQuantity');
         // $totalQuantity = $this->shipments()->sum('shipment_products.quantity');
         
         return [
