@@ -16,11 +16,11 @@ class ShipmentProductResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            "id" => $this->id,
-            'supplierName' => $this->supplier->supplierName ?? null,
-            'importer' => $this->importer,
+            "id" => $this -> id,
+            'supplierName' => $this->supplier->supplierName,
+            'importer' => $this -> importer ,
             'admin' => new AdminRegisterResource($this->admin),
-            'place' => $this->supplier->place ?? null,
+            'place' => $this ->supplier->place,
             "totalPrice" => number_format($this->totalPrice, 2, '.', ''),
             'discount'            => number_format($this->discount ?? 0, 2, '.', ''),
             'extraAmount'         => number_format($this->extraAmount ?? 0, 2, '.', ''),
@@ -35,7 +35,7 @@ class ShipmentProductResource extends JsonResource
             'paidAmount' => number_format($this->paidAmount, 2, '.', ''),
             'remainingAmount' => number_format($this->remainingAmount, 2, '.', ''),
             'description' => $this -> description,
-            'products' => $this->products ? $this->products->map(function ($product) {
+            'products' => $this->products->map(function ($product) {
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
@@ -47,7 +47,7 @@ class ShipmentProductResource extends JsonResource
                     'returnReason' => $product->pivot->returnReason,
                     'endDate' => $product->pivot->endDate,
                 ];
-            }) : [],
+            }),
 
         ];
     }
