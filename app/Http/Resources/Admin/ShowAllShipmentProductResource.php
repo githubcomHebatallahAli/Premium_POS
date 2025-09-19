@@ -28,7 +28,7 @@ class ShowAllShipmentProductResource extends JsonResource
             // "unitPrice" => number_format($this->unitPrice, 2, '.', ''),
             // 'returnReason' => $this -> returnReason,
             'endDate' => $this -> endDate,
-            "creationDate" => $this -> creationDate,
+            // "creationDate" => $this -> creationDate,
         ];
     }
 }
