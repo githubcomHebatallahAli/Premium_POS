@@ -9,64 +9,111 @@ use Illuminate\Support\Facades\DB;
 
 class ShipmentService
 {
+// public function create(array $data): Shipment
+// {
+//     return DB::transaction(function () use ($data) {
+//         $shipment = Shipment::create([
+//             'supplier_id' => $data['supplier_id'],
+//             'importer' => $data['importer'] ?? null,
+//             'admin_id' => auth()->id(),
+//             'discount' => $data['discount'] ?? 0,
+//             'discountType' => $data['discountType'] ?? null,
+//             'extraAmount' => $data['extraAmount'] ?? 0,
+//             'taxType' => $data['taxType'] ?? null,
+//             'paidAmount' => $data['paidAmount'] ?? 0,
+//             'creationDate' => now(),
+//             'payment' => $data['payment'] ?? null,
+//         ]);
+
+//         $total = 0;
+
+//         foreach ($data['products'] as $productData) {
+//             $productId = $productData['id'] ?? $productData['product_id'] ?? null;
+            
+//             if (!$productId) {
+//                 throw new \Exception("Product ID is required for all products");
+//             }
+
+//             $product = Product::findOrFail($productId);
+
+//             $unitPrice = $productData['unitPrice'] ?? null;
+            
+//             if (empty($unitPrice) && isset($productData['price'])) {
+//                 $unitPrice = $productData['price'] / $productData['quantity'];
+//             }
+
+//             $totalPrice = $productData['price'] ?? $productData['quantity'] * $unitPrice;
+
+            
+//             ShipmentProduct::create([
+//                 'shipment_id' => $shipment->id,
+//                 'product_id' => $product->id,
+//                 'product_variant_id' => $productData['product_variant_id'],
+//                 'quantity' => $productData['quantity'],
+//                 'remainingQuantity' => $productData['quantity'],
+//                 'unitPrice' => $unitPrice,
+//                 'price' => $totalPrice,
+//                 'endDate' => $productData['endDate'] ?? null,
+//             ]);
+
+//             $total += $totalPrice;
+//         }
+
+//         $this->calculateTotals($shipment, $total);
+//         $shipment->updateShipmentProductsCount();
+//         $shipment->fresh(['products.variants', 'supplier', 'shipmentProducts.variant']);
+//         return $shipment;
+//     }); 
+// }
+
+
 public function create(array $data): Shipment
 {
     return DB::transaction(function () use ($data) {
         $shipment = Shipment::create([
-            'supplier_id' => $data['supplier_id'],
-            'importer' => $data['importer'] ?? null,
-            'admin_id' => auth()->id(),
-            'discount' => $data['discount'] ?? 0,
+            'supplier_id'  => $data['supplier_id'],
+            'importer'     => $data['importer'] ?? null,
+            'admin_id'     => auth()->id(),
+            'discount'     => $data['discount'] ?? 0,
             'discountType' => $data['discountType'] ?? null,
-            'extraAmount' => $data['extraAmount'] ?? 0,
-            'taxType' => $data['taxType'] ?? null,
-            'paidAmount' => $data['paidAmount'] ?? 0,
+            'extraAmount'  => $data['extraAmount'] ?? 0,
+            'taxType'      => $data['taxType'] ?? null,
+            'paidAmount'   => $data['paidAmount'] ?? 0,
             'creationDate' => now(),
-            'payment' => $data['payment'] ?? null,
+            'payment'      => $data['payment'] ?? null,
         ]);
 
         $total = 0;
 
         foreach ($data['products'] as $productData) {
             $productId = $productData['id'] ?? $productData['product_id'] ?? null;
-            
-            if (!$productId) {
-                throw new \Exception("Product ID is required for all products");
-            }
+            if (!$productId) throw new \Exception("Product ID is required for all products");
 
             $product = Product::findOrFail($productId);
 
-            $unitPrice = $productData['unitPrice'] ?? null;
-            
-            if (empty($unitPrice) && isset($productData['price'])) {
-                $unitPrice = $productData['price'] / $productData['quantity'];
-            }
-
+            $unitPrice  = $productData['unitPrice'] ?? (isset($productData['price']) ? $productData['price'] / $productData['quantity'] : null);
             $totalPrice = $productData['price'] ?? $productData['quantity'] * $unitPrice;
 
-            
             ShipmentProduct::create([
-                'shipment_id' => $shipment->id,
-                'product_id' => $product->id,
-                'product_variant_id' => $productData['product_variant_id'],
-                'quantity' => $productData['quantity'],
-                'remainingQuantity' => $productData['quantity'],
-                'unitPrice' => $unitPrice,
-                'price' => $totalPrice,
-                'endDate' => $productData['endDate'] ?? null,
+                'shipment_id'        => $shipment->id,
+                'product_id'         => $product->id,
+                'product_variant_id' => $productData['product_variant_id'] ?? null,
+                'quantity'           => $productData['quantity'],
+                'remainingQuantity'  => $productData['quantity'],
+                'unitPrice'          => $unitPrice,
+                'price'              => $totalPrice,
+                'endDate'            => $productData['endDate'] ?? null,
             ]);
 
             $total += $totalPrice;
         }
 
         $this->calculateTotals($shipment, $total);
-        $shipment->updateShipmentProductsCount();
-        $shipment->fresh(['products.variants', 'supplier', 'shipmentProducts.variant']);
 
-        
-        return $shipment;
-    }); 
+        return $shipment->fresh(['products.variants', 'supplier', 'shipmentProducts.variant']);
+    });
 }
+
 
 public function calculateTotals(Shipment $shipment, float $total): void
 {
@@ -113,10 +160,8 @@ public function calculateTotals(Shipment $shipment, float $total): void
 public function update(Shipment $shipment, array $data): Shipment
 {
     return DB::transaction(function () use ($shipment, $data) {
-        // حذف جميع المنتجات المرتبطة بالشحنة باستخدام نموذج Pivot
+     
         $shipment->shipmentProducts()->delete();
-
-        
         $shipment->update([
             'supplier_id' => $data['supplier_id'],
             'importer' => $data['importer'] ?? $shipment->importer,
@@ -160,10 +205,9 @@ public function update(Shipment $shipment, array $data): Shipment
             $total += $totalPrice;
         }
 
-       
         $this->calculateTotals($shipment, $total);
 
-        $shipment->updateShipmentProductsCount();
+        // $shipment->updateShipmentProductsCount();
 
         return $shipment->fresh(['products.variants', 'supplier', 'shipmentProducts.variant']);
     });
@@ -243,17 +287,75 @@ public function update(Shipment $shipment, array $data): Shipment
 //     $this->calculateTotals($shipment, $total);
 // }
 
+// public function fullReturn(Shipment $shipment): Shipment
+// {
+//     return DB::transaction(function () use ($shipment) {
+//         $reason = request('returnReason', 'إرجاع كامل');
+
+//         foreach ($shipment->products as $product) {
+//             $shipment->products()->updateExistingPivot($product->id, [
+//                 'quantity'     => 0,
+//                 'price'        => 0,
+//                 'returnReason' => $reason,
+//             ]);
+//         }
+
+//         $this->calculateTotals($shipment, 0);
+
+//         $shipment->update([
+//             'status'       => 'return',
+//             'returnReason' => $reason,
+//         ]);
+
+//         $shipment->updateShipmentProductCount();
+
+//         return $shipment->fresh(['products', 'supplier']);
+//     });
+// }
+
+
 public function fullReturn(Shipment $shipment): Shipment
 {
     return DB::transaction(function () use ($shipment) {
         $reason = request('returnReason', 'إرجاع كامل');
 
+        // إجمالي الشحنة قبل الخصم والضريبة
+        $total = $shipment->products->sum(fn($p) => $p->pivot->price);
+
+        // حساب الخصم والضريبة الكلية
+        $discount = $shipment->discount ?? 0;
+        $extra    = $shipment->extraAmount ?? 0;
+
+        $discountAmount = ($shipment->discountType === 'percentage' && $discount > 0)
+            ? ($total * $discount) / 100
+            : $discount;
+
+        $extraAmount = ($shipment->taxType === 'percentage' && $extra > 0)
+            ? ($total * $extra) / 100
+            : $extra;
+
         foreach ($shipment->products as $product) {
+            $pivot = $product->pivot;
+
+            // نسبة مساهمة المنتج في الإجمالي
+            $share = $pivot->price / $total;
+
+            // نصيب المنتج من الخصم والضريبة
+            $productDiscount = round($discountAmount * $share, 2);
+            $productExtra    = round($extraAmount * $share, 2);
+
+            // السعر النهائي للمنتج بعد الخصم والضريبة
+            $finalProductPrice = $pivot->price - $productDiscount + $productExtra;
+
+            // تصفير الكمية والسعر مع تسجيل السبب
             $shipment->products()->updateExistingPivot($product->id, [
                 'quantity'     => 0,
                 'price'        => 0,
                 'returnReason' => $reason,
             ]);
+
+            // هنا ممكن تسجل قيمة المرتجع لو محتاجها في تقارير منفصلة
+            // $returnedValue = $finalProductPrice;
         }
 
         // تصفير الإجماليات
@@ -265,30 +367,58 @@ public function fullReturn(Shipment $shipment): Shipment
             'returnReason' => $reason,
         ]);
 
-        $shipment->updateShipmentProductCount();
-
         return $shipment->fresh(['products', 'supplier']);
     });
 }
+
 
 public function partialReturn(Shipment $shipment, array $products): Shipment
 {
     return DB::transaction(function () use ($shipment, $products) {
         $globalReturnReason = request('returnReason', 'إرجاع جزئي');
 
+        // إجمالي الشحنة قبل الخصم والضريبة
+        $total = $shipment->products->sum(fn($p) => $p->pivot->price);
+
+        // حساب الخصم والضريبة الكلية
+        $discount = $shipment->discount ?? 0;
+        $extra    = $shipment->extraAmount ?? 0;
+
+        $discountAmount = ($shipment->discountType === 'percentage' && $discount > 0)
+            ? ($total * $discount) / 100
+            : $discount;
+
+        $extraAmount = ($shipment->taxType === 'percentage' && $extra > 0)
+            ? ($total * $extra) / 100
+            : $extra;
+
         foreach ($products as $productData) {
             $productModel = $shipment->products()->where('product_id', $productData['id'])->first();
             if (!$productModel) continue;
 
-            $pivot       = $productModel->pivot;
-            $returnQty   = min($productData['quantity'], $pivot->quantity);
-            $reason      = $productData['reason'] ?? $globalReturnReason;
-            $newQuantity = $pivot->quantity - $returnQty;
+            $pivot      = $productModel->pivot;
+            $returnQty  = min($productData['quantity'], $pivot->quantity);
+            $reason     = $productData['reason'] ?? $globalReturnReason;
+            $newQty     = $pivot->quantity - $returnQty;
 
-            if ($newQuantity > 0) {
+            // نسبة مساهمة المنتج في الإجمالي
+            $share = $pivot->price / $total;
+
+            // نصيب المنتج من الخصم والضريبة
+            $productDiscount = round($discountAmount * $share, 2);
+            $productExtra    = round($extraAmount * $share, 2);
+
+            // السعر النهائي للمنتج بعد الخصم والضريبة
+            $finalProductPrice = $pivot->price - $productDiscount + $productExtra;
+
+            // لو رجعنا جزء من الكمية → نوزع الخصم والضريبة بنفس النسبة
+            $unitFinalPrice = $finalProductPrice / $pivot->quantity;
+            $returnedValue  = $unitFinalPrice * $returnQty;
+
+            if ($newQty > 0) {
                 $shipment->products()->updateExistingPivot($productModel->id, [
-                    'quantity'     => $newQuantity,
-                    'price'        => $pivot->unitPrice * $newQuantity,
+                    'quantity'     => $newQty,
+                    'price'        => $pivot->unitPrice * $newQty,
                     'returnReason' => $reason,
                 ]);
             } else {
@@ -299,13 +429,12 @@ public function partialReturn(Shipment $shipment, array $products): Shipment
                     'returnReason' => $reason,
                 ]);
             }
+
+            // نخصم قيمة المرتجع (بما فيها حصته من الخصم والضريبة) من الإجمالي
+            $total -= $returnedValue;
         }
 
-        // إعادة تحميل المنتجات بعد التعديلات
-        $shipment->load('products');
-        $total = $shipment->products->sum(fn($p) => $p->pivot->price);
-
-        // إعادة حساب الإجماليات
+        // إعادة حساب الإجماليات بعد التوزيع
         $this->calculateTotals($shipment, $total);
 
         // تحديث حالة الشحنة
@@ -314,19 +443,115 @@ public function partialReturn(Shipment $shipment, array $products): Shipment
             'returnReason' => $globalReturnReason,
         ]);
 
-        $shipment->updateShipmentProductCount();
-
         return $shipment->fresh(['products', 'supplier']);
     });
 }
 
+
+
+// public function partialReturn(Shipment $shipment, array $products): Shipment
+// {
+//     return DB::transaction(function () use ($shipment, $products) {
+//         $globalReturnReason = request('returnReason', 'إرجاع جزئي');
+
+//         foreach ($products as $productData) {
+//             $productModel = $shipment->products()->where('product_id', $productData['id'])->first();
+//             if (!$productModel) continue;
+
+//             $pivot       = $productModel->pivot;
+//             $returnQty   = min($productData['quantity'], $pivot->quantity);
+//             $reason      = $productData['reason'] ?? $globalReturnReason;
+//             $newQuantity = $pivot->quantity - $returnQty;
+
+//             if ($newQuantity > 0) {
+//                 $shipment->products()->updateExistingPivot($productModel->id, [
+//                     'quantity'     => $newQuantity,
+//                     'price'        => $pivot->unitPrice * $newQuantity,
+//                     'returnReason' => $reason,
+//                 ]);
+//             } else {
+                
+//                 $shipment->products()->updateExistingPivot($productModel->id, [
+//                     'quantity'     => 0,
+//                     'price'        => 0,
+//                     'returnReason' => $reason,
+//                 ]);
+//             }
+//         }
+
+//         $shipment->load('products');
+//         $total = $shipment->products->sum(fn($p) => $p->pivot->price);
+
+//         $this->calculateTotals($shipment, $total);
+
+//         $shipment->update([
+//             'status'       => 'partialReturn',
+//             'returnReason' => $globalReturnReason,
+//         ]);
+
+//         $shipment->updateShipmentProductCount();
+
+//         return $shipment->fresh(['products', 'supplier']);
+//     });
+// }
+
+// public function recalculateTotals(Shipment $shipment): void
+// {
+//     $shipment->load('products');
+//     $total = $shipment->products->sum(fn($p) => $p->pivot->price);
+
+//     $this->calculateTotals($shipment, $total);
+// }
+
+
 public function recalculateTotals(Shipment $shipment): void
 {
     $shipment->load('products');
+
     $total = $shipment->products->sum(fn($p) => $p->pivot->price);
 
-    $this->calculateTotals($shipment, $total);
+    $discount = $shipment->discount ?? 0;
+    $extra    = $shipment->extraAmount ?? 0;
+
+    $discountAmount = ($shipment->discountType === 'percentage' && $discount > 0)
+        ? ($total * $discount) / 100
+        : $discount;
+
+    $extraAmount = ($shipment->taxType === 'percentage' && $extra > 0)
+        ? ($total * $extra) / 100
+        : $extra;
+
+    foreach ($shipment->products as $product) {
+        $pivot = $product->pivot;
+        if ($total > 0 && $pivot->price > 0) {
+            $share = $pivot->price / $total;
+
+            $productDiscount = round($discountAmount * $share, 2);
+            $productExtra    = round($extraAmount * $share, 2);
+
+            $finalProductPrice = $pivot->price - $productDiscount + $productExtra;
+            $shipment->products()->updateExistingPivot($product->id, [
+                'final_price' => $finalProductPrice,
+            ]);
+        }
+    }
+
+   
+    $final     = $total - $discountAmount + $extraAmount;
+    $remaining = $final - ($shipment->paidAmount ?? 0);
+
+    $status = $remaining <= 0 ? 'completed' : 'indebted';
+
+    $shipment->update([
+        'totalPrice'          => $total,
+        'invoiceAfterDiscount'=> $final,
+        'remainingAmount'     => $remaining > 0 ? $remaining : 0,
+        'status'              => $status,
+    ]);
+
+    $shipment->updateShipmentProductsCount();
 }
+
 
 // public function updateShipmentProductCount(Shipment $shipment): void
 // {

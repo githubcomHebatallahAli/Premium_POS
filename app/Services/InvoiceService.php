@@ -263,12 +263,125 @@ public function update(Invoice $invoice, array $data): Invoice
 //     });
 // }
 
+// public function fullReturn(Invoice $invoice): Invoice
+// {
+//     return DB::transaction(function () use ($invoice) {
+//         $reason = request('returnReason', 'إرجاع كامل');
+
+//         foreach ($invoice->products as $product) {
+//             $invoice->products()->updateExistingPivot($product->id, [
+//                 'quantity'     => 0,
+//                 'total'        => 0,
+//                 'profit'       => 0,
+//                 'returnReason' => $reason,
+//             ]);
+
+//             $shipmentProduct = ShipmentProduct::findOrFail($product->pivot->shipment_product_id);
+//             $shipmentProduct->increment('remainingQuantity', $product->pivot->quantity);
+//         }
+
+//         $this->calculateTotals($invoice, 0, 0);
+
+//         $invoice->update([
+//             'status'       => 'return',
+//             'returnReason' => $reason,
+//         ]);
+
+//         $invoice->updateInvoiceProductCount();
+
+//         return $invoice->fresh(['products']);
+//     });
+// }
+
+// public function partialReturn(Invoice $invoice, array $products): Invoice
+// {
+//     return DB::transaction(function () use ($invoice, $products) {
+//         $globalReason = request('returnReason', 'إرجاع جزئي');
+
+//         foreach ($products as $p) {
+//             $product = $invoice->products()->where('product_id', $p['id'])->first();
+//             if (!$product) continue;
+
+//             $pivot     = $product->pivot;
+//             $returnQty = min($p['quantity'], $pivot->quantity);
+
+//             $shipmentProduct = ShipmentProduct::findOrFail($pivot->shipment_product_id);
+//             $shipmentProduct->increment('remainingQuantity', $returnQty);
+
+//             $newQty = $pivot->quantity - $returnQty;
+//             $reason = $p['reason'] ?? $globalReason;
+
+//             if ($newQty > 0) {
+//                 $invoice->products()->updateExistingPivot($product->id, [
+//                     'quantity'     => $newQty,
+//                     'total'        => $product->sellingPrice * $newQty,
+//                     'profit'       => ($product->sellingPrice - $shipmentProduct->unitPrice) * $newQty,
+//                     'returnReason' => $reason,
+//                 ]);
+//             } else {
+                
+//                 $invoice->products()->updateExistingPivot($product->id, [
+//                     'quantity'     => 0,
+//                     'total'        => 0,
+//                     'profit'       => 0,
+//                     'returnReason' => $reason,
+//                 ]);
+//             }
+//         }
+//         $invoice->load('products');
+
+//         $total  = $invoice->products->sum(fn($prod) => $prod->pivot->total);
+//         $profit = $invoice->products->sum(fn($prod) => $prod->pivot->profit);
+
+//         $this->calculateTotals($invoice, $total, $profit);
+
+//         $invoice->update([
+//             'status'       => 'partialReturn',
+//             'returnReason' => $globalReason,
+//         ]);
+
+//         $invoice->updateInvoiceProductCount();
+
+//         return $invoice->fresh(['products']);
+//     });
+// }
+
+
 public function fullReturn(Invoice $invoice): Invoice
 {
     return DB::transaction(function () use ($invoice) {
         $reason = request('returnReason', 'إرجاع كامل');
 
+        // إجمالي الفاتورة قبل الخصم والضريبة
+        $total = $invoice->products->sum(fn($p) => $p->pivot->total);
+        $profit = $invoice->products->sum(fn($p) => $p->pivot->profit);
+
+        // حساب الخصم والضريبة الكلية
+        $discount = $invoice->discount ?? 0;
+        $extra    = $invoice->extraAmount ?? 0;
+
+        $discountAmount = ($invoice->discountType === 'percentage' && $discount > 0)
+            ? ($total * $discount) / 100
+            : $discount;
+
+        $extraAmount = ($invoice->taxType === 'percentage' && $extra > 0)
+            ? ($total * $extra) / 100
+            : $extra;
+
         foreach ($invoice->products as $product) {
+            $pivot = $product->pivot;
+
+            // نسبة مساهمة المنتج
+            $share = $pivot->total > 0 && $total > 0 ? $pivot->total / $total : 0;
+
+            // نصيب المنتج من الخصم والضريبة
+            $productDiscount = round($discountAmount * $share, 2);
+            $productExtra    = round($extraAmount * $share, 2);
+
+            // السعر النهائي للمنتج بعد الخصم والضريبة
+            $finalProductTotal = $pivot->total - $productDiscount + $productExtra;
+
+            // تصفير الكمية والسعر والربح
             $invoice->products()->updateExistingPivot($product->id, [
                 'quantity'     => 0,
                 'total'        => 0,
@@ -277,14 +390,15 @@ public function fullReturn(Invoice $invoice): Invoice
             ]);
 
             // رجّع الكمية للمخزون
-            $shipmentProduct = ShipmentProduct::findOrFail($product->pivot->shipment_product_id);
-            $shipmentProduct->increment('remainingQuantity', $product->pivot->quantity);
+            $shipmentProduct = ShipmentProduct::findOrFail($pivot->shipment_product_id);
+            $shipmentProduct->increment('remainingQuantity', $pivot->quantity);
+
+            // ممكن تسجل قيمة المرتجع (finalProductTotal) في جدول منفصل لو محتاج تقارير دقيقة
         }
 
         // تصفير الإجماليات
         $this->calculateTotals($invoice, 0, 0);
 
-        // تحديث حالة الفاتورة
         $invoice->update([
             'status'       => 'return',
             'returnReason' => $reason,
@@ -301,29 +415,54 @@ public function partialReturn(Invoice $invoice, array $products): Invoice
     return DB::transaction(function () use ($invoice, $products) {
         $globalReason = request('returnReason', 'إرجاع جزئي');
 
+        // إجمالي الفاتورة قبل الخصم والضريبة
+        $total = $invoice->products->sum(fn($p) => $p->pivot->total);
+        $profit = $invoice->products->sum(fn($p) => $p->pivot->profit);
+
+        // حساب الخصم والضريبة الكلية
+        $discount = $invoice->discount ?? 0;
+        $extra    = $invoice->extraAmount ?? 0;
+
+        $discountAmount = ($invoice->discountType === 'percentage' && $discount > 0)
+            ? ($total * $discount) / 100
+            : $discount;
+
+        $extraAmount = ($invoice->taxType === 'percentage' && $extra > 0)
+            ? ($total * $extra) / 100
+            : $extra;
+
         foreach ($products as $p) {
             $product = $invoice->products()->where('product_id', $p['id'])->first();
             if (!$product) continue;
 
             $pivot     = $product->pivot;
             $returnQty = min($p['quantity'], $pivot->quantity);
+            $reason    = $p['reason'] ?? $globalReason;
+            $newQty    = $pivot->quantity - $returnQty;
 
-            // رجّع الكمية للمخزون
-            $shipmentProduct = ShipmentProduct::findOrFail($pivot->shipment_product_id);
-            $shipmentProduct->increment('remainingQuantity', $returnQty);
+            // نسبة مساهمة المنتج
+            $share = $pivot->total > 0 && $total > 0 ? $pivot->total / $total : 0;
 
-            $newQty = $pivot->quantity - $returnQty;
-            $reason = $p['reason'] ?? $globalReason;
+            // نصيب المنتج من الخصم والضريبة
+            $productDiscount = round($discountAmount * $share, 2);
+            $productExtra    = round($extraAmount * $share, 2);
 
+            // السعر النهائي للمنتج بعد الخصم والضريبة
+            $finalProductTotal = $pivot->total - $productDiscount + $productExtra;
+
+            // قيمة المرتجع (بالنسبة للكمية المرتجعة فقط)
+            $unitFinalPrice = $finalProductTotal / $pivot->quantity;
+            $returnedValue  = $unitFinalPrice * $returnQty;
+
+            // تحديث الكمية أو تصفيرها
             if ($newQty > 0) {
                 $invoice->products()->updateExistingPivot($product->id, [
                     'quantity'     => $newQty,
                     'total'        => $product->sellingPrice * $newQty,
-                    'profit'       => ($product->sellingPrice - $shipmentProduct->unitPrice) * $newQty,
+                    'profit'       => ($product->sellingPrice - $pivot->unitPrice) * $newQty,
                     'returnReason' => $reason,
                 ]);
             } else {
-                // تصفير بدل ما نعمل detach
                 $invoice->products()->updateExistingPivot($product->id, [
                     'quantity'     => 0,
                     'total'        => 0,
@@ -331,18 +470,17 @@ public function partialReturn(Invoice $invoice, array $products): Invoice
                     'returnReason' => $reason,
                 ]);
             }
+
+            $shipmentProduct = ShipmentProduct::findOrFail($pivot->shipment_product_id);
+            $shipmentProduct->increment('remainingQuantity', $returnQty);
+
+            $total  -= $returnedValue;
+            $profit -= ($product->sellingPrice - $pivot->unitPrice) * $returnQty;
         }
 
-        // إعادة تحميل المنتجات بعد التعديلات
-        $invoice->load('products');
-
-        // إعادة حساب الإجماليات
-        $total  = $invoice->products->sum(fn($prod) => $prod->pivot->total);
-        $profit = $invoice->products->sum(fn($prod) => $prod->pivot->profit);
-
+       
         $this->calculateTotals($invoice, $total, $profit);
 
-        // تحديث الحالة وسبب الإرجاع العام
         $invoice->update([
             'status'       => 'partialReturn',
             'returnReason' => $globalReason,
@@ -353,6 +491,7 @@ public function partialReturn(Invoice $invoice, array $products): Invoice
         return $invoice->fresh(['products']);
     });
 }
+
 
 
 // public function partialReturn(Invoice $invoice, array $products): Invoice
@@ -406,36 +545,29 @@ public function partialReturn(Invoice $invoice, array $products): Invoice
 // }
 
 
-
 public function calculateTotals(Invoice $invoice, float $total, float $profit): void
 {
     $discount = $invoice->discount ?? 0;
     $extra    = $invoice->extraAmount ?? 0;
 
-    // حساب الخصم
     if ($invoice->discountType === 'percentage' && $discount > 0) {
         $discountAmount = ($total * $discount) / 100;
     } else {
         $discountAmount = $discount;
     }
 
-    // حساب الإضافي (ضريبة أو رسوم)
     if ($invoice->taxType === 'percentage' && $extra > 0) {
         $extraAmount = ($total * $extra) / 100;
     } else {
         $extraAmount = $extra;
     }
 
-    // الإجمالي النهائي
     $final = $total - $discountAmount + $extraAmount;
 
-    // المتبقي بعد الدفع
     $remaining = $final - ($invoice->paidAmount ?? 0);
 
-    // تحديد الحالة
     $status = $remaining <= 0 ? 'completed' : 'indebted';
 
-    // تحديث الفاتورة
     $invoice->update([
         'totalInvoicePrice'    => $total,
         'invoiceAfterDiscount' => $final,
@@ -459,22 +591,62 @@ public function calculateTotals(Invoice $invoice, float $total, float $profit): 
 //     $invoice->updateInvoiceProductCount();
 // }
 
+// public function recalculateTotals(Invoice $invoice): void
+// {
+//     $invoice->load('products');
+//     $total  = $invoice->products->sum(fn($prod) => $prod->pivot->total);
+//     $profit = $invoice->products->sum(fn($prod) => $prod->pivot->profit);
+
+//     $this->calculateTotals($invoice, $total, $profit);
+//     $invoice->updateInvoiceProductCount();
+// }
+
 public function recalculateTotals(Invoice $invoice): void
 {
-    // إعادة تحميل المنتجات مع pivot
     $invoice->load('products');
 
-    // حساب الإجمالي والربح من الـ pivot
-    $total  = $invoice->products->sum(fn($prod) => $prod->pivot->total);
-    $profit = $invoice->products->sum(fn($prod) => $prod->pivot->profit);
+    $total  = $invoice->products->sum(fn($p) => $p->pivot->total);
+    $profit = $invoice->products->sum(fn($p) => $p->pivot->profit);
 
-    // استدعاء الدالة الأساسية لحساب الإجماليات
-    $this->calculateTotals($invoice, $total, $profit);
+    $discount = $invoice->discount ?? 0;
+    $extra    = $invoice->extraAmount ?? 0;
 
-    // تحديث عدد المنتجات في الفاتورة
+    $discountAmount = ($invoice->discountType === 'percentage' && $discount > 0)
+        ? ($total * $discount) / 100
+        : $discount;
+
+    $extraAmount = ($invoice->taxType === 'percentage' && $extra > 0)
+        ? ($total * $extra) / 100
+        : $extra;
+
+    foreach ($invoice->products as $product) {
+        $pivot = $product->pivot;
+        if ($total > 0 && $pivot->total > 0) {
+            $share = $pivot->total / $total;
+
+            $productDiscount = round($discountAmount * $share, 2);
+            $productExtra    = round($extraAmount * $share, 2);
+
+            $finalProductTotal = $pivot->total - $productDiscount + $productExtra;
+
+        }
+    }
+
+    $final     = $total - $discountAmount + $extraAmount;
+    $remaining = $final - ($invoice->paidAmount ?? 0);
+
+    $status = $remaining <= 0 ? 'completed' : 'indebted';
+
+    $invoice->update([
+        'totalInvoicePrice'   => $total,
+        'invoiceAfterDiscount'=> $final,
+        'remainingAmount'     => $remaining > 0 ? $remaining : 0,
+        'profit'              => $profit,
+        'status'              => $status,
+    ]);
+
     $invoice->updateInvoiceProductCount();
 }
-
 
 }
 
