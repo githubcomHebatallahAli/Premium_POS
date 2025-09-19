@@ -506,28 +506,44 @@ public function partialReturn(Invoice $invoice, array $products): Invoice
 }
 
 
-    public function calculateTotals(Invoice $invoice, float $total, float $profit): array
-    {
-        $discount = $invoice->discount ?? 0;
-        if ($invoice->discountType === 'percentage') {
-            $discount = ($total * $discount) / 100;
-        }
+public function calculateTotals(Invoice $invoice, float $total, float $profit): void
+{
+    $discount = $invoice->discount ?? 0;
+    $extra    = $invoice->extraAmount ?? 0;
 
-        $extra = $invoice->extraAmount ?? 0;
-        if ($invoice->taxType === 'percentage') {
-            $extra = ($total * $extra) / 100;
-        }
-
-        $final     = $total - $discount + $extra;
-        $remaining = $final - ($invoice->paidAmount ?? 0);
-
-        return [
-            'totalInvoicePrice'   => $total,
-            'invoiceAfterDiscount'=> $final,
-            'profit'              => $profit,
-            'remainingAmount'     => $remaining > 0 ? $remaining : 0,
-        ];
+    // حساب الخصم
+    if ($invoice->discountType === 'percentage' && $discount > 0) {
+        $discountAmount = ($total * $discount) / 100;
+    } else {
+        $discountAmount = $discount;
     }
+
+    // حساب الإضافي (ضريبة أو رسوم)
+    if ($invoice->taxType === 'percentage' && $extra > 0) {
+        $extraAmount = ($total * $extra) / 100;
+    } else {
+        $extraAmount = $extra;
+    }
+
+    // الإجمالي النهائي
+    $final = $total - $discountAmount + $extraAmount;
+
+    // المتبقي بعد الدفع
+    $remaining = $final - ($invoice->paidAmount ?? 0);
+
+    // تحديد الحالة
+    $status = $remaining <= 0 ? 'completed' : 'indebted';
+
+    // تحديث الفاتورة
+    $invoice->update([
+        'totalInvoicePrice'    => $total,
+        'invoiceAfterDiscount' => $final,
+        'profit'               => $profit,
+        'remainingAmount'      => $remaining > 0 ? $remaining : 0,
+        'status'               => $status,
+    ]);
+}
+
 
     public function recalculateTotals(Invoice $invoice): void
     {
