@@ -22,7 +22,7 @@ class ShowAllShipmentProductResource extends JsonResource
             // 'supplierName' => $this->shipment->supplier->supplierName ?? null,
             // 'importer' => $this -> shipment->importer ?? null ,
             // 'place' => $this ->shipment->supplier->place ?? null,
-            "quantity" => $this -> quantity,
+            // "quantity" => $this -> quantity,
             "remainingQuantity" => $this -> remainingQuantity,
             // "price" => number_format($this->price, 2, '.', ''),
             // "unitPrice" => number_format($this->unitPrice, 2, '.', ''),
