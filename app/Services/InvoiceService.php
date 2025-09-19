@@ -367,9 +367,9 @@ class InvoiceService
                 $profit += $lineProfit;
             }
 
-            // إجماليات + عدد المنتجات
-            $calculated = $this->calculateTotals($invoice, $total, $profit);
-            $invoice->update($calculated);
+            $this->calculateTotals($invoice, $total, $profit);
+$invoice->updateInvoiceProductCount();
+
             $invoice->updateInvoiceProductCount();
 
             return $invoice->fresh(['products.variants', 'invoiceProducts.shipmentProduct']);
