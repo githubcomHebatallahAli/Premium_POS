@@ -170,25 +170,106 @@ public function update(Shipment $shipment, array $data): Shipment
 }
 
 
+// public function fullReturn(Shipment $shipment): Shipment
+// {
+//     return DB::transaction(function () use ($shipment) {
+        
+//         foreach ($shipment->products as $product) {
+//             $shipment->products()->updateExistingPivot($product->id, [
+//                 'returnReason' => request('returnReason', 'إرجاع كامل')
+//             ]);
+//         }
+
+//         $shipment->update([
+//             'status' => 'return',
+//             'returnReason' => request('returnReason', 'إرجاع كامل')
+//         ]);
+
+//         return $shipment->fresh('products');
+//     });
+// }
+
+
+// public function partialReturn(Shipment $shipment, array $products): Shipment
+// {
+//     return DB::transaction(function () use ($shipment, $products) {
+//         $globalReturnReason = request('returnReason', 'إرجاع جزئي');
+
+//         foreach ($products as $productData) {
+//             $product = $shipment->products()->where('product_id', $productData['id'])->first();
+            
+//             if (!$product) continue;
+
+//             $returnQty = min($productData['quantity'], $product->pivot->quantity);
+//             $reason = $productData['reason'] ?? $globalReturnReason;
+
+//             $newQuantity = $product->pivot->quantity - $returnQty;
+            
+//             if ($newQuantity > 0) {
+//                 $shipment->products()->updateExistingPivot($product->id, [
+//                     'quantity' => $newQuantity,
+//                     'price' => $product->pivot->unitPrice * $newQuantity,
+//                     'returnReason' => $reason
+//                 ]);
+//             } else {
+//                 $shipment->products()->updateExistingPivot($product->id, [
+//                     'returnReason' => $reason
+//                 ]);
+//                 $shipment->products()->detach($product->id);
+//             }
+//         }
+
+//         $total = $shipment->products->sum(function($product) {
+//             return $product->pivot->price;
+//         });
+
+//         $this->calculateTotals($shipment, $total);
+
+//         $shipment->update([
+//             'status' => 'partialReturn',
+//             'returnReason' => $globalReturnReason
+//         ]);
+
+//         return $shipment->fresh(['products', 'supplier']);
+//     });
+// }
+
+// public function recalculateTotals(Shipment $shipment): void
+// {
+//     $total = $shipment->products->sum(function($product) {
+//         return $product->pivot->price;
+//     });
+    
+//     $this->calculateTotals($shipment, $total);
+// }
+
 public function fullReturn(Shipment $shipment): Shipment
 {
     return DB::transaction(function () use ($shipment) {
-        
+        $reason = request('returnReason', 'إرجاع كامل');
+
         foreach ($shipment->products as $product) {
             $shipment->products()->updateExistingPivot($product->id, [
-                'returnReason' => request('returnReason', 'إرجاع كامل')
+                'quantity'     => 0,
+                'price'        => 0,
+                'returnReason' => $reason,
             ]);
         }
 
+        // تصفير الإجماليات
+        $this->calculateTotals($shipment, 0);
+
+        // تحديث حالة الشحنة
         $shipment->update([
-            'status' => 'return',
-            'returnReason' => request('returnReason', 'إرجاع كامل')
+            'status'       => 'return',
+            'returnReason' => $reason,
         ]);
 
-        return $shipment->fresh('products');
+        $shipment->updateShipmentProductCount();
+
+        return $shipment->fresh(['products', 'supplier']);
     });
 }
-
 
 public function partialReturn(Shipment $shipment, array $products): Shipment
 {
@@ -196,39 +277,44 @@ public function partialReturn(Shipment $shipment, array $products): Shipment
         $globalReturnReason = request('returnReason', 'إرجاع جزئي');
 
         foreach ($products as $productData) {
-            $product = $shipment->products()->where('product_id', $productData['id'])->first();
-            
-            if (!$product) continue;
+            $productModel = $shipment->products()->where('product_id', $productData['id'])->first();
+            if (!$productModel) continue;
 
-            $returnQty = min($productData['quantity'], $product->pivot->quantity);
-            $reason = $productData['reason'] ?? $globalReturnReason;
+            $pivot       = $productModel->pivot;
+            $returnQty   = min($productData['quantity'], $pivot->quantity);
+            $reason      = $productData['reason'] ?? $globalReturnReason;
+            $newQuantity = $pivot->quantity - $returnQty;
 
-            $newQuantity = $product->pivot->quantity - $returnQty;
-            
             if ($newQuantity > 0) {
-                $shipment->products()->updateExistingPivot($product->id, [
-                    'quantity' => $newQuantity,
-                    'price' => $product->pivot->unitPrice * $newQuantity,
-                    'returnReason' => $reason
+                $shipment->products()->updateExistingPivot($productModel->id, [
+                    'quantity'     => $newQuantity,
+                    'price'        => $pivot->unitPrice * $newQuantity,
+                    'returnReason' => $reason,
                 ]);
             } else {
-                $shipment->products()->updateExistingPivot($product->id, [
-                    'returnReason' => $reason
+                // تصفير بدل ما نعمل detach
+                $shipment->products()->updateExistingPivot($productModel->id, [
+                    'quantity'     => 0,
+                    'price'        => 0,
+                    'returnReason' => $reason,
                 ]);
-                $shipment->products()->detach($product->id);
             }
         }
 
-        $total = $shipment->products->sum(function($product) {
-            return $product->pivot->price;
-        });
+        // إعادة تحميل المنتجات بعد التعديلات
+        $shipment->load('products');
+        $total = $shipment->products->sum(fn($p) => $p->pivot->price);
 
+        // إعادة حساب الإجماليات
         $this->calculateTotals($shipment, $total);
 
+        // تحديث حالة الشحنة
         $shipment->update([
-            'status' => 'partialReturn',
-            'returnReason' => $globalReturnReason
+            'status'       => 'partialReturn',
+            'returnReason' => $globalReturnReason,
         ]);
+
+        $shipment->updateShipmentProductCount();
 
         return $shipment->fresh(['products', 'supplier']);
     });
@@ -236,12 +322,18 @@ public function partialReturn(Shipment $shipment, array $products): Shipment
 
 public function recalculateTotals(Shipment $shipment): void
 {
-    $total = $shipment->products->sum(function($product) {
-        return $product->pivot->price;
-    });
-    
+    $shipment->load('products');
+    $total = $shipment->products->sum(fn($p) => $p->pivot->price);
+
     $this->calculateTotals($shipment, $total);
 }
+
+public function updateShipmentProductCount(Shipment $shipment): void
+{
+    $shipment->shipmentProductsCount = $shipment->products()->count();
+    $shipment->saveQuietly();
+}
+
 
 
 }
