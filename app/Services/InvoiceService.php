@@ -545,15 +545,19 @@ public function calculateTotals(Invoice $invoice, float $total, float $profit): 
 }
 
 
-    public function recalculateTotals(Invoice $invoice): void
-    {
-        $total  = $invoice->products->sum(fn($p) => $p->pivot->total);
-        $profit = $invoice->products->sum(fn($p) => $p->pivot->profit);
+public function recalculateTotals(Invoice $invoice): void
+{
+    // حساب الإجمالي والربح من المنتجات
+    $total  = $invoice->products->sum(fn($p) => $p->pivot->total);
+    $profit = $invoice->products->sum(fn($p) => $p->pivot->profit);
 
-        $calculated = $this->calculateTotals($invoice, $total, $profit);
-        $invoice->update($calculated);
-        $invoice->updateInvoiceProductCount();
-    }
+    // استدعاء الدالة اللي بتعمل الحسابات والتحديث
+    $this->calculateTotals($invoice, $total, $profit);
+
+    // تحديث عدد المنتجات في الفاتورة
+    $invoice->updateInvoiceProductCount();
+}
+
 }
 
 
