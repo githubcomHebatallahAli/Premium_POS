@@ -271,173 +271,213 @@ class InvoiceService
 //     $this->calculateTotals($shipment, $total);
 // }
 
-    public function create(array $data): Invoice
-    {
-        return DB::transaction(function () use ($data) {
-            $invoice = Invoice::create([
-                'customerName'   => $data['customerName'],
-                'customerPhone'  => $data['customerPhone'],
-                'admin_id'       => auth()->id(),
-                'payment'        => $data['payment'] ?? null,
-                'pullType'       => $data['pullType'],
-                'discount'       => $data['discount'] ?? 0,
-                'discountType'   => $data['discountType'] ?? null,
-                'extraAmount'    => $data['extraAmount'] ?? 0,
-                'taxType'        => $data['taxType'] ?? null,
-                'paidAmount'     => $data['paidAmount'] ?? 0,
-                'creationDate'   => now(),
-            ]);
+public function create(array $data): Invoice
+{
+    return DB::transaction(function () use ($data) {
+        $invoice = Invoice::create([
+            'customerName'   => $data['customerName'],
+            'customerPhone'  => $data['customerPhone'],
+            'admin_id'       => auth()->id(),
+            'payment'        => $data['payment'] ?? null,
+            'pullType'       => $data['pullType'],
+            'discount'       => $data['discount'] ?? 0,
+            'discountType'   => $data['discountType'] ?? null,
+            'extraAmount'    => $data['extraAmount'] ?? 0,
+            'taxType'        => $data['taxType'] ?? null,
+            'paidAmount'     => $data['paidAmount'] ?? 0,
+            'creationDate'   => now(),
+        ]);
 
-            $total  = 0;
-            $profit = 0;
+        $total  = 0;
+        $profit = 0;
 
-            foreach ($data['products'] as $productData) {
-                $productId = $productData['id'];
-                $variantId = $productData['product_variant_id'] ?? null;
-                $quantity  = $productData['quantity'];
+        foreach ($data['products'] as $productData) {
+            $productId = $productData['id'];
+            $variantId = $productData['product_variant_id'] ?? null;
+            $quantity  = $productData['quantity'];
 
-                $product = Product::findOrFail($productId);
+            $product = Product::findOrFail($productId);
 
-                if ($data['pullType'] === 'fifo') {
-                    // FIFO
-                    $availableStocks = ShipmentProduct::where('product_id', $productId)
-                        ->when($variantId, fn($q) => $q->where('product_variant_id', $variantId))
-                        ->where('remainingQuantity', '>', 0)
-                        ->orderBy('created_at')
-                        ->get();
+            $lineTotal  = 0;
+            $lineProfit = 0;
 
-                    $remainingNeeded = $quantity;
-                    $lineTotal       = 0;
-                    $lineProfit      = 0;
+            if ($data['pullType'] === 'fifo') {
+                $availableStocks = ShipmentProduct::where('product_id', $productId)
+                    ->when($variantId, fn($q) => $q->where('product_variant_id', $variantId))
+                    ->where('remainingQuantity', '>', 0)
+                    ->orderBy('created_at')
+                    ->get();
 
-                    foreach ($availableStocks as $stock) {
-                        if ($remainingNeeded <= 0) break;
+                $remainingNeeded = $quantity;
 
-                        $takeQty = min($remainingNeeded, $stock->remainingQuantity);
-                        $stock->decrement('remainingQuantity', $takeQty);
+                foreach ($availableStocks as $stock) {
+                    if ($remainingNeeded <= 0) break;
 
-                        $sellingPrice = $product->sellingPrice;
-                        $purchasePrice = $stock->unitPrice;
-
-                        $subTotal  = $takeQty * $sellingPrice;
-                        $subProfit = ($sellingPrice - $purchasePrice) * $takeQty;
-
-                        $invoice->products()->attach($product->id, [
-                            'shipment_product_id' => $stock->id,
-                            'product_variant_id'  => $variantId,
-                            'quantity'            => $takeQty,
-                            'total'               => $subTotal,
-                            'profit'              => $subProfit,
-                        ]);
-
-                        $lineTotal  += $subTotal;
-                        $lineProfit += $subProfit;
-                        $remainingNeeded -= $takeQty;
-                    }
-
-                    if ($remainingNeeded > 0) {
-                        throw new \Exception("Not enough stock for product {$product->name}");
-                    }
-                } else {
-                    // Manual
-                    $shipmentProduct = ShipmentProduct::findOrFail($productData['shipment_product_id']);
-
-                    if ($shipmentProduct->remainingQuantity < $quantity) {
-                        throw new \Exception("Not enough stock for product {$product->name}");
-                    }
-
-                    $shipmentProduct->decrement('remainingQuantity', $quantity);
+                    $takeQty = min($remainingNeeded, $stock->remainingQuantity);
+                    $stock->decrement('remainingQuantity', $takeQty);
 
                     $sellingPrice  = $product->sellingPrice;
-                    $purchasePrice = $shipmentProduct->unitPrice;
+                    $purchasePrice = $stock->unitPrice;
 
-                    $lineTotal  = $sellingPrice * $quantity;
-                    $lineProfit = ($sellingPrice - $purchasePrice) * $quantity;
+                    $subTotal  = $takeQty * $sellingPrice;
+                    $subProfit = ($sellingPrice - $purchasePrice) * $takeQty;
 
                     $invoice->products()->attach($product->id, [
-                        'shipment_product_id' => $shipmentProduct->id,
+                        'shipment_product_id' => $stock->id,
                         'product_variant_id'  => $variantId,
-                        'quantity'            => $quantity,
-                        'total'               => $lineTotal,
-                        'profit'              => $lineProfit,
+                        'quantity'            => $takeQty,
+                        'total'               => $subTotal,
+                        'profit'              => $subProfit,
                     ]);
+
+                    $lineTotal  += $subTotal;
+                    $lineProfit += $subProfit;
+                    $remainingNeeded -= $takeQty;
                 }
 
-                $total  += $lineTotal;
-                $profit += $lineProfit;
-            }
-
-            $this->calculateTotals($invoice, $total, $profit);
-$invoice->updateInvoiceProductCount();
-
-            $invoice->updateInvoiceProductCount();
-
-            return $invoice->fresh(['products.variants', 'invoiceProducts.shipmentProduct']);
-        });
-    }
-
-    public function update(Invoice $invoice, array $data): Invoice
-    {
-        return DB::transaction(function () use ($invoice, $data) {
-            $invoice->products()->detach();
-
-            $invoice->update([
-                'customerName' => $data['customerName'],
-                'customerPhone'=> $data['customerPhone'],
-                'status'       => $data['status'] ?? $invoice->status,
-                'payment'      => $data['payment'] ?? $invoice->payment,
-                'pullType'     => $data['pullType'],
-                'discount'     => $data['discount'] ?? 0,
-                'discountType' => $data['discountType'] ?? $invoice->discountType,
-                'extraAmount'  => $data['extraAmount'] ?? 0,
-                'taxType'      => $data['taxType'] ?? $invoice->taxType,
-                'paidAmount'   => $data['paidAmount'] ?? 0,
-            ]);
-
-            $total  = 0;
-            $profit = 0;
-
-            foreach ($data['products'] as $p) {
-                $product = Product::findOrFail($p['id']);
-
-                if ($data['pullType'] === 'fifo') {
-                    $shipmentProduct = ShipmentProduct::where('product_id', $product->id)
-                        ->where('remainingQuantity', '>', 0)
-                        ->orderBy('created_at')
-                        ->first();
-                } else {
-                    $shipmentProduct = ShipmentProduct::where('product_id', $product->id)
-                        ->where('shipment_id', $p['shipment_id'])
-                        ->first();
+                if ($remainingNeeded > 0) {
+                    throw new \Exception("Not enough stock for product {$product->name}");
                 }
+            } else {
+                $shipmentProduct = ShipmentProduct::findOrFail($productData['shipment_product_id']);
 
-                if (!$shipmentProduct || $shipmentProduct->remainingQuantity < $p['quantity']) {
+                if ($shipmentProduct->remainingQuantity < $quantity) {
                     throw new \Exception("Not enough stock for product {$product->name}");
                 }
 
-                $shipmentProduct->decrement('remainingQuantity', $p['quantity']);
+                $shipmentProduct->decrement('remainingQuantity', $quantity);
 
-                $lineTotal  = $product->sellingPrice * $p['quantity'];
-                $lineProfit = ($product->sellingPrice - $shipmentProduct->unitPrice) * $p['quantity'];
+                $sellingPrice  = $product->sellingPrice;
+                $purchasePrice = $shipmentProduct->unitPrice;
+
+                $lineTotal  = $sellingPrice * $quantity;
+                $lineProfit = ($sellingPrice - $purchasePrice) * $quantity;
 
                 $invoice->products()->attach($product->id, [
                     'shipment_product_id' => $shipmentProduct->id,
-                    'quantity'            => $p['quantity'],
+                    'product_variant_id'  => $variantId,
+                    'quantity'            => $quantity,
                     'total'               => $lineTotal,
                     'profit'              => $lineProfit,
                 ]);
-
-                $total  += $lineTotal;
-                $profit += $lineProfit;
             }
 
-            $calculated = $this->calculateTotals($invoice, $total, $profit);
-            $invoice->update($calculated);
-            $invoice->updateInvoiceProductCount();
+            $total  += $lineTotal;
+            $profit += $lineProfit;
+        }
 
-            return $invoice->fresh(['products']);
-        });
-    }
+        $this->calculateTotals($invoice, $total, $profit);
+        $invoice->updateInvoiceProductCount();
+
+        return $invoice->fresh(['products.variants', 'invoiceProducts.shipmentProduct']);
+    });
+}
+
+public function update(Invoice $invoice, array $data): Invoice
+{
+    return DB::transaction(function () use ($invoice, $data) {
+        // امسح المنتجات القديمة
+        $invoice->products()->detach();
+
+        // تحديث بيانات الفاتورة الأساسية
+        $invoice->update([
+            'customerName' => $data['customerName'],
+            'customerPhone'=> $data['customerPhone'],
+            'payment'      => $data['payment'] ?? $invoice->payment,
+            'pullType'     => $data['pullType'],
+            'discount'     => $data['discount'] ?? 0,
+            'discountType' => $data['discountType'] ?? $invoice->discountType,
+            'extraAmount'  => $data['extraAmount'] ?? 0,
+            'taxType'      => $data['taxType'] ?? $invoice->taxType,
+            'paidAmount'   => $data['paidAmount'] ?? 0,
+        ]);
+
+        $total  = 0;
+        $profit = 0;
+
+        foreach ($data['products'] as $p) {
+            $product   = Product::findOrFail($p['id']);
+            $variantId = $p['product_variant_id'] ?? null;
+            $quantity  = $p['quantity'];
+
+            $lineTotal  = 0;
+            $lineProfit = 0;
+
+            if ($data['pullType'] === 'fifo') {
+                // نفس منطق create: توزيع الكمية على كل الشحنات المتاحة
+                $availableStocks = ShipmentProduct::where('product_id', $product->id)
+                    ->when($variantId, fn($q) => $q->where('product_variant_id', $variantId))
+                    ->where('remainingQuantity', '>', 0)
+                    ->orderBy('created_at')
+                    ->get();
+
+                $remainingNeeded = $quantity;
+
+                foreach ($availableStocks as $stock) {
+                    if ($remainingNeeded <= 0) break;
+
+                    $takeQty = min($remainingNeeded, $stock->remainingQuantity);
+                    $stock->decrement('remainingQuantity', $takeQty);
+
+                    $sellingPrice  = $product->sellingPrice;
+                    $purchasePrice = $stock->unitPrice;
+
+                    $subTotal  = $takeQty * $sellingPrice;
+                    $subProfit = ($sellingPrice - $purchasePrice) * $takeQty;
+
+                    $invoice->products()->attach($product->id, [
+                        'shipment_product_id' => $stock->id,
+                        'product_variant_id'  => $variantId,
+                        'quantity'            => $takeQty,
+                        'total'               => $subTotal,
+                        'profit'              => $subProfit,
+                    ]);
+
+                    $lineTotal  += $subTotal;
+                    $lineProfit += $subProfit;
+                    $remainingNeeded -= $takeQty;
+                }
+
+                if ($remainingNeeded > 0) {
+                    throw new \Exception("Not enough stock for product {$product->name}");
+                }
+            } else {
+                // Manual
+                $shipmentProduct = ShipmentProduct::findOrFail($p['shipment_product_id']);
+
+                if ($shipmentProduct->remainingQuantity < $quantity) {
+                    throw new \Exception("Not enough stock for product {$product->name}");
+                }
+
+                $shipmentProduct->decrement('remainingQuantity', $quantity);
+
+                $sellingPrice  = $product->sellingPrice;
+                $purchasePrice = $shipmentProduct->unitPrice;
+
+                $lineTotal  = $sellingPrice * $quantity;
+                $lineProfit = ($sellingPrice - $purchasePrice) * $quantity;
+
+                $invoice->products()->attach($product->id, [
+                    'shipment_product_id' => $shipmentProduct->id,
+                    'product_variant_id'  => $variantId,
+                    'quantity'            => $quantity,
+                    'total'               => $lineTotal,
+                    'profit'              => $lineProfit,
+                ]);
+            }
+
+            $total  += $lineTotal;
+            $profit += $lineProfit;
+        }
+
+        // إعادة حساب الإجماليات وتحديث الفاتورة
+        $this->calculateTotals($invoice, $total, $profit);
+        $invoice->updateInvoiceProductCount();
+
+        return $invoice->fresh(['products.variants', 'invoiceProducts.shipmentProduct']);
+    });
+}
+
 
     public function fullReturn(Invoice $invoice): Invoice
     {

@@ -42,22 +42,22 @@ class InvoiceController extends Controller
         ]);
     }
 
-    public function edit($id)
-    {
-        $invoice = Invoice::with('products')->findOrFail($id);
+public function edit($id)
+{
+    $invoice = Invoice::with('products')->findOrFail($id);
 
-        $total = $invoice->products->sum('pivot.total');
-        $profit = $invoice->products->sum('pivot.profit');
+    $total  = $invoice->products->sum(fn($p) => $p->pivot->total);
+    $profit = $invoice->products->sum(fn($p) => $p->pivot->profit);
 
-        $calculated = $this->invoiceService->calculateTotals($invoice, $total, $profit);
+    // هنا مش محتاجين نعمل update تاني
+    $this->invoiceService->calculateTotals($invoice, $total, $profit);
 
-        $invoice->update($calculated);
+    return response()->json([
+        'message' => 'Invoice fetched successfully',
+        'data'    => new InvoiceResource($invoice->fresh('products')),
+    ]);
+}
 
-        return response()->json([
-            'message' => 'Invoice fetched successfully',
-            'data' => new InvoiceResource($invoice->fresh('products')),
-        ]);
-    }
 
     public function fullReturn($id)
     {
@@ -133,43 +133,74 @@ public function showAll(Request $request)
             'paid_amount'       => number_format($paidAmount, 2, '.', ''),
             'remaining_amount'  => number_format($remainingAmount, 2, '.', ''),
             'total_sales'       => number_format($totalSales, 2, '.', ''),
-            'total_profit'      => number_format($totalProfit, 2, '.', ''),
+            // 'total_profit'      => number_format($totalProfit, 2, '.', ''),
         ],
         'message' => "Show All Invoices Successfully."
     ]);
 }
 
+// public function updatePaidAmount(UpdatePaidAmountRequest $request, $id)
+// {
+
+//     $Invoice = Invoice::findOrFail($id);
+//     // $this->authorize('updatePaidAmount',$Invoice);
+//     $paidAmount = $request->paidAmount;
+
+//     if ($paidAmount > $Invoice->remainingAmount) {
+//         return response()->json([
+//             'message' => 'المبلغ المدفوع يتجاوز المبلغ المتبقي.',
+//         ], 400);
+//     }
+
+//     $Invoice->paidAmount += $paidAmount;
+
+//     $remainingAmount = $Invoice->invoiceAfterDiscount - $Invoice->paidAmount;
+//     $Invoice->remainingAmount = $remainingAmount;
+
+//     if ($remainingAmount <= 0) {
+//         $Invoice->status = 'completed';
+//     } else {
+//         $Invoice->status = 'indebted';
+//     }
+
+//     $Invoice->save();
+
+//     return response()->json([
+//         'message' => 'تم تحديث المبلغ المدفوع بنجاح.',
+//         'data' => new InvoiceResource($Invoice),
+//     ]);
+// }
+
 public function updatePaidAmount(UpdatePaidAmountRequest $request, $id)
 {
+    $invoice = Invoice::with('products')->findOrFail($id);
+    // $this->authorize('updatePaidAmount', $invoice);
 
-    $Invoice = Invoice::findOrFail($id);
-    // $this->authorize('updatePaidAmount',$Invoice);
     $paidAmount = $request->paidAmount;
 
-    if ($paidAmount > $Invoice->remainingAmount) {
+    if ($paidAmount > $invoice->remainingAmount) {
         return response()->json([
             'message' => 'المبلغ المدفوع يتجاوز المبلغ المتبقي.',
         ], 400);
     }
 
-    $Invoice->paidAmount += $paidAmount;
+    // تحديث المبلغ المدفوع
+    $invoice->paidAmount += $paidAmount;
+    $invoice->save();
 
-    $remainingAmount = $Invoice->invoiceAfterDiscount - $Invoice->paidAmount;
-    $Invoice->remainingAmount = $remainingAmount;
+    // إعادة حساب الإجمالي والربح من المنتجات
+    $total  = $invoice->products->sum(fn($p) => $p->pivot->total);
+    $profit = $invoice->products->sum(fn($p) => $p->pivot->profit);
 
-    if ($remainingAmount <= 0) {
-        $Invoice->status = 'completed';
-    } else {
-        $Invoice->status = 'indebted';
-    }
-
-    $Invoice->save();
+    // إعادة استخدام calculateTotals لتحديث باقي الحقول (final, remaining, status...)
+    $this->invoiceService->calculateTotals($invoice, $total, $profit);
 
     return response()->json([
         'message' => 'تم تحديث المبلغ المدفوع بنجاح.',
-        'data' => new InvoiceResource($Invoice),
+        'data'    => new InvoiceResource($invoice->fresh('products')),
     ]);
 }
+
 
 
   public function destroy(string $id)
