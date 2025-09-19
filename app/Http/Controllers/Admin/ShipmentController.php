@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\ShipmentRequest;
 use App\Http\Requests\Admin\UpdatePaidAmountRequest;
 use App\Http\Resources\Admin\ShipmentProductResource;
 use App\Http\Resources\Admin\ShipmentResource;
+use App\Http\Resources\Admin\ShowAllShipmentProductResource;
 use App\Models\Shipment;
 use App\Models\ShipmentProduct;
 use App\Models\Supplier;
@@ -206,7 +207,7 @@ public function partialReturn(Request $request, $id)
         $shipmentProducts = $query->orderBy('created_at', 'asc')->get();
 
         return response()->json([
-            'data' =>ShipmentProductResource::collection($shipmentProducts) ,
+            'data' =>ShowAllShipmentProductResource::collection($shipmentProducts) ,
             'total' => $shipmentProducts->count()
         ]);
     }
@@ -217,7 +218,7 @@ public function partialReturn(Request $request, $id)
                             ->findOrFail($id);
 
         return response()->json([
-            'data' => new ShipmentProductResource($shipmentProduct)
+            'data' => new ShowAllShipmentProductResource($shipmentProduct)
         ]);
     }
 }
