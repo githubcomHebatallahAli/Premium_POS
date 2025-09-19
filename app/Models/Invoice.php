@@ -45,48 +45,79 @@ class Invoice extends Model
     return $this->belongsTo(Admin::class);
 }
 
+//     protected static function booted()
+// {
+//      static::created(function ($invoice) {
+//         $invoice->load('products');
+//         $invoice->updateInvoiceProductCount();
+//     });
+
+//     static::deleted(function ($invoice) {
+//         if (method_exists($invoice, 'isForceDeleting') && $invoice->isForceDeleting()) {
+//             return;
+//         }
+
+//         if (!$invoice->trashed()) {
+//             $invoice->updateInvoiceProductCount();
+//         }
+//     });
+
+// }
+
+// public function calculateTotalPrice()
+// {
+//     $total = 0;
+
+//     foreach ($this->products as $product) {
+//         $total += $product->pivot->total;
+//     }
+
+//     return $total;
+// }
+
+// public function updateInvoiceProductCount()
+// {
+//    $this->invoiceProductCount = $this->products()->count();
+//     $this->saveQuietly();
+// }
+
+// public function getInvoiceProductCountAttribute()
+// {
+//     return $this->attributes['invoiceProductCount'] ?? 0;
+// }
+
+
     protected static function booted()
-{
-     static::created(function ($invoice) {
-        $invoice->load('products');
-        $invoice->updateInvoiceProductCount();
-    });
-
-    static::deleted(function ($invoice) {
-        if (method_exists($invoice, 'isForceDeleting') && $invoice->isForceDeleting()) {
-            return;
-        }
-
-        if (!$invoice->trashed()) {
+    {
+        static::created(function ($invoice) {
+            $invoice->load('products');
             $invoice->updateInvoiceProductCount();
-        }
-    });
+        });
 
-}
-
-public function calculateTotalPrice()
-{
-    $total = 0;
-
-    foreach ($this->products as $product) {
-        $total += $product->pivot->total;
+        static::deleted(function ($invoice) {
+            if ($invoice->isForceDeleting()) {
+                return;
+            }
+            // تحديث العدّاد عند soft delete
+            $invoice->updateInvoiceProductCount();
+        });
     }
 
-    return $total;
-}
+    public function calculateTotalPrice()
+    {
+        return $this->products->sum(fn($p) => $p->pivot->total);
+    }
 
-public function updateInvoiceProductCount()
-{
-    $this->invoiceProductCount = $this->products()
-    ->whereNull('deleted_at')
-    ->count();
-    $this->saveQuietly();
-}
+    public function updateInvoiceProductCount()
+    {
+        $this->invoiceProductCount = $this->products()->count();
+        $this->saveQuietly();
+    }
 
-public function getInvoiceProductCountAttribute()
-{
-    return $this->attributes['invoiceProductCount'] ?? 0;
-}
+    public function getInvoiceProductCountAttribute()
+    {
+        return $this->attributes['invoiceProductCount'] ?? 0;
+    }
 
     public function invoiceProducts()
     {
