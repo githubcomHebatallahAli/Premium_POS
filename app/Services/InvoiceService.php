@@ -479,24 +479,51 @@ public function update(Invoice $invoice, array $data): Invoice
 }
 
 
-    public function fullReturn(Invoice $invoice): Invoice
-    {
-        return DB::transaction(function () use ($invoice) {
-            foreach ($invoice->products as $p) {
-                $shipmentProduct = ShipmentProduct::findOrFail($p->pivot->shipment_product_id);
-                $shipmentProduct->increment('remainingQuantity', $p->pivot->quantity);
-            }
+    // public function fullReturn(Invoice $invoice): Invoice
+    // {
+    //     return DB::transaction(function () use ($invoice) {
+    //         foreach ($invoice->products as $p) {
+    //             $shipmentProduct = ShipmentProduct::findOrFail($p->pivot->shipment_product_id);
+    //             $shipmentProduct->increment('remainingQuantity', $p->pivot->quantity);
+    //         }
 
-            $invoice->update([
-                'status'       => 'return',
-                'returnReason' => request('returnReason', 'إرجاع كامل'),
-            ]);
+    //         $invoice->update([
+    //             'status'       => 'return',
+    //             'returnReason' => request('returnReason', 'إرجاع كامل'),
+    //         ]);
 
-            $invoice->updateInvoiceProductCount();
+    //         $invoice->updateInvoiceProductCount();
 
-            return $invoice->fresh(['products']);
-        });
-    }
+    //         return $invoice->fresh(['products']);
+    //     });
+    // }
+
+public function fullReturn(Invoice $invoice): Invoice
+{
+    return DB::transaction(function () use ($invoice) {
+        foreach ($invoice->products as $p) {
+            $shipmentProduct = ShipmentProduct::findOrFail($p->pivot->shipment_product_id);
+            $shipmentProduct->increment('remainingQuantity', $p->pivot->quantity);
+        }
+
+        // فك ارتباط كل المنتجات من الفاتورة
+        $invoice->products()->detach();
+
+        // تحديث حالة الفاتورة
+        $invoice->update([
+            'status'        => 'return',
+            'returnReason'  => request('returnReason', 'إرجاع كامل'),
+            'totalInvoicePrice'    => 0,
+            'invoiceAfterDiscount' => 0,
+            'profit'               => 0,
+            'remainingAmount'      => 0,
+        ]);
+
+        $invoice->updateInvoiceProductCount();
+
+        return $invoice->fresh(['products']);
+    });
+}
 
 public function partialReturn(Invoice $invoice, array $products): Invoice
 {
@@ -504,46 +531,50 @@ public function partialReturn(Invoice $invoice, array $products): Invoice
         $globalReason = request('returnReason', 'إرجاع جزئي');
 
         foreach ($products as $p) {
-            $pivot = $invoice->products()->where('product_id', $p['id'])->first();
-            if (!$pivot) continue;
+            $product = $invoice->products()->where('product_id', $p['id'])->first();
+            if (!$product) continue;
 
-            $returnQty = min($p['quantity'], $pivot->pivot->quantity);
+            $pivot = $product->pivot;
+            $returnQty = min($p['quantity'], $pivot->quantity);
 
-            $shipmentProduct = ShipmentProduct::findOrFail($pivot->pivot->shipment_product_id);
+            $shipmentProduct = ShipmentProduct::findOrFail($pivot->shipment_product_id);
             $shipmentProduct->increment('remainingQuantity', $returnQty);
 
-            $newQty = $pivot->pivot->quantity - $returnQty;
+            $newQty = $pivot->quantity - $returnQty;
 
             if ($newQty > 0) {
-                $invoice->products()->updateExistingPivot($pivot->id, [
+                $invoice->products()->updateExistingPivot($product->id, [
                     'quantity'     => $newQty,
-                    'total'        => $pivot->sellingPrice * $newQty,
-                    'profit'       => ($pivot->sellingPrice - $shipmentProduct->unitPrice) * $newQty,
+                    'total'        => $product->sellingPrice * $newQty,
+                    'profit'       => ($product->sellingPrice - $shipmentProduct->unitPrice) * $newQty,
                     'returnReason' => $p['reason'] ?? $globalReason,
                 ]);
             } else {
-                $invoice->products()->updateExistingPivot($pivot->id, [
+                $invoice->products()->updateExistingPivot($product->id, [
                     'returnReason' => $p['reason'] ?? $globalReason,
                 ]);
-                $invoice->products()->detach($pivot->id);
+                $invoice->products()->detach($product->id);
             }
         }
 
+        // إعادة حساب الإجماليات
         $total  = $invoice->products->sum(fn($prod) => $prod->pivot->total);
         $profit = $invoice->products->sum(fn($prod) => $prod->pivot->profit);
 
-        $calculated = $this->calculateTotals($invoice, $total, $profit);
+        $this->calculateTotals($invoice, $total, $profit);
 
-        $invoice->update(array_merge($calculated, [
+        // تحديث الحالة وسبب الإرجاع
+        $invoice->update([
             'status'       => 'partialReturn',
             'returnReason' => $globalReason,
-        ]));
+        ]);
 
         $invoice->updateInvoiceProductCount();
 
         return $invoice->fresh(['products']);
     });
 }
+
 
 
 public function calculateTotals(Invoice $invoice, float $total, float $profit): void
