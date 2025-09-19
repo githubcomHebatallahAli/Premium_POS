@@ -328,12 +328,10 @@ public function recalculateTotals(Shipment $shipment): void
     $this->calculateTotals($shipment, $total);
 }
 
-public function updateShipmentProductCount(Shipment $shipment): void
-{
-    $shipment->shipmentProductsCount = $shipment->products()->count();
-    $shipment->saveQuietly();
-}
-
-
+// public function updateShipmentProductCount(Shipment $shipment): void
+// {
+//     $shipment->shipmentProductsCount = $shipment->products()->count();
+//     $shipment->saveQuietly();
+// }
 
 }

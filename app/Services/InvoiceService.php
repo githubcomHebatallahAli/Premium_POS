@@ -236,25 +236,58 @@ public function update(Invoice $invoice, array $data): Invoice
     //     });
     // }
 
+// public function fullReturn(Invoice $invoice): Invoice
+// {
+//     return DB::transaction(function () use ($invoice) {
+//         foreach ($invoice->products as $p) {
+//             $shipmentProduct = ShipmentProduct::findOrFail($p->pivot->shipment_product_id);
+//             $shipmentProduct->increment('remainingQuantity', $p->pivot->quantity);
+//         }
+
+//         // فك ارتباط كل المنتجات من الفاتورة
+//         $invoice->products()->detach();
+
+//         // تحديث حالة الفاتورة
+//         $invoice->update([
+//             'status'        => 'return',
+//             'returnReason'  => request('returnReason', 'إرجاع كامل'),
+//             'totalInvoicePrice'    => 0,
+//             'invoiceAfterDiscount' => 0,
+//             'profit'               => 0,
+//             'remainingAmount'      => 0,
+//         ]);
+
+//         $invoice->updateInvoiceProductCount();
+
+//         return $invoice->fresh(['products']);
+//     });
+// }
+
 public function fullReturn(Invoice $invoice): Invoice
 {
     return DB::transaction(function () use ($invoice) {
-        foreach ($invoice->products as $p) {
-            $shipmentProduct = ShipmentProduct::findOrFail($p->pivot->shipment_product_id);
-            $shipmentProduct->increment('remainingQuantity', $p->pivot->quantity);
+        $reason = request('returnReason', 'إرجاع كامل');
+
+        foreach ($invoice->products as $product) {
+            $invoice->products()->updateExistingPivot($product->id, [
+                'quantity'     => 0,
+                'total'        => 0,
+                'profit'       => 0,
+                'returnReason' => $reason,
+            ]);
+
+            // رجّع الكمية للمخزون
+            $shipmentProduct = ShipmentProduct::findOrFail($product->pivot->shipment_product_id);
+            $shipmentProduct->increment('remainingQuantity', $product->pivot->quantity);
         }
 
-        // فك ارتباط كل المنتجات من الفاتورة
-        $invoice->products()->detach();
+        // تصفير الإجماليات
+        $this->calculateTotals($invoice, 0, 0);
 
         // تحديث حالة الفاتورة
         $invoice->update([
-            'status'        => 'return',
-            'returnReason'  => request('returnReason', 'إرجاع كامل'),
-            'totalInvoicePrice'    => 0,
-            'invoiceAfterDiscount' => 0,
-            'profit'               => 0,
-            'remainingAmount'      => 0,
+            'status'       => 'return',
+            'returnReason' => $reason,
         ]);
 
         $invoice->updateInvoiceProductCount();
@@ -272,28 +305,36 @@ public function partialReturn(Invoice $invoice, array $products): Invoice
             $product = $invoice->products()->where('product_id', $p['id'])->first();
             if (!$product) continue;
 
-            $pivot = $product->pivot;
+            $pivot     = $product->pivot;
             $returnQty = min($p['quantity'], $pivot->quantity);
 
+            // رجّع الكمية للمخزون
             $shipmentProduct = ShipmentProduct::findOrFail($pivot->shipment_product_id);
             $shipmentProduct->increment('remainingQuantity', $returnQty);
 
             $newQty = $pivot->quantity - $returnQty;
+            $reason = $p['reason'] ?? $globalReason;
 
             if ($newQty > 0) {
                 $invoice->products()->updateExistingPivot($product->id, [
                     'quantity'     => $newQty,
                     'total'        => $product->sellingPrice * $newQty,
                     'profit'       => ($product->sellingPrice - $shipmentProduct->unitPrice) * $newQty,
-                    'returnReason' => $p['reason'] ?? $globalReason,
+                    'returnReason' => $reason,
                 ]);
             } else {
+                // تصفير بدل ما نعمل detach
                 $invoice->products()->updateExistingPivot($product->id, [
-                    'returnReason' => $p['reason'] ?? $globalReason,
+                    'quantity'     => 0,
+                    'total'        => 0,
+                    'profit'       => 0,
+                    'returnReason' => $reason,
                 ]);
-                $invoice->products()->detach($product->id);
             }
         }
+
+        // إعادة تحميل المنتجات بعد التعديلات
+        $invoice->load('products');
 
         // إعادة حساب الإجماليات
         $total  = $invoice->products->sum(fn($prod) => $prod->pivot->total);
@@ -301,7 +342,7 @@ public function partialReturn(Invoice $invoice, array $products): Invoice
 
         $this->calculateTotals($invoice, $total, $profit);
 
-        // تحديث الحالة وسبب الإرجاع
+        // تحديث الحالة وسبب الإرجاع العام
         $invoice->update([
             'status'       => 'partialReturn',
             'returnReason' => $globalReason,
@@ -312,6 +353,57 @@ public function partialReturn(Invoice $invoice, array $products): Invoice
         return $invoice->fresh(['products']);
     });
 }
+
+
+// public function partialReturn(Invoice $invoice, array $products): Invoice
+// {
+//     return DB::transaction(function () use ($invoice, $products) {
+//         $globalReason = request('returnReason', 'إرجاع جزئي');
+
+//         foreach ($products as $p) {
+//             $product = $invoice->products()->where('product_id', $p['id'])->first();
+//             if (!$product) continue;
+
+//             $pivot = $product->pivot;
+//             $returnQty = min($p['quantity'], $pivot->quantity);
+
+//             $shipmentProduct = ShipmentProduct::findOrFail($pivot->shipment_product_id);
+//             $shipmentProduct->increment('remainingQuantity', $returnQty);
+
+//             $newQty = $pivot->quantity - $returnQty;
+
+//             if ($newQty > 0) {
+//                 $invoice->products()->updateExistingPivot($product->id, [
+//                     'quantity'     => $newQty,
+//                     'total'        => $product->sellingPrice * $newQty,
+//                     'profit'       => ($product->sellingPrice - $shipmentProduct->unitPrice) * $newQty,
+//                     'returnReason' => $p['reason'] ?? $globalReason,
+//                 ]);
+//             } else {
+//                 $invoice->products()->updateExistingPivot($product->id, [
+//                     'returnReason' => $p['reason'] ?? $globalReason,
+//                 ]);
+//                 $invoice->products()->detach($product->id);
+//             }
+//         }
+
+//         // إعادة حساب الإجماليات
+//         $total  = $invoice->products->sum(fn($prod) => $prod->pivot->total);
+//         $profit = $invoice->products->sum(fn($prod) => $prod->pivot->profit);
+
+//         $this->calculateTotals($invoice, $total, $profit);
+
+//         // تحديث الحالة وسبب الإرجاع
+//         $invoice->update([
+//             'status'       => 'partialReturn',
+//             'returnReason' => $globalReason,
+//         ]);
+
+//         $invoice->updateInvoiceProductCount();
+
+//         return $invoice->fresh(['products']);
+//     });
+// }
 
 
 
@@ -354,18 +446,35 @@ public function calculateTotals(Invoice $invoice, float $total, float $profit): 
 }
 
 
+// public function recalculateTotals(Invoice $invoice): void
+// {
+//     // حساب الإجمالي والربح من المنتجات
+//     $total  = $invoice->products->sum(fn($p) => $p->pivot->total);
+//     $profit = $invoice->products->sum(fn($p) => $p->pivot->profit);
+
+//     // استدعاء الدالة اللي بتعمل الحسابات والتحديث
+//     $this->calculateTotals($invoice, $total, $profit);
+
+//     // تحديث عدد المنتجات في الفاتورة
+//     $invoice->updateInvoiceProductCount();
+// }
+
 public function recalculateTotals(Invoice $invoice): void
 {
-    // حساب الإجمالي والربح من المنتجات
-    $total  = $invoice->products->sum(fn($p) => $p->pivot->total);
-    $profit = $invoice->products->sum(fn($p) => $p->pivot->profit);
+    // إعادة تحميل المنتجات مع pivot
+    $invoice->load('products');
 
-    // استدعاء الدالة اللي بتعمل الحسابات والتحديث
+    // حساب الإجمالي والربح من الـ pivot
+    $total  = $invoice->products->sum(fn($prod) => $prod->pivot->total);
+    $profit = $invoice->products->sum(fn($prod) => $prod->pivot->profit);
+
+    // استدعاء الدالة الأساسية لحساب الإجماليات
     $this->calculateTotals($invoice, $total, $profit);
 
     // تحديث عدد المنتجات في الفاتورة
     $invoice->updateInvoiceProductCount();
 }
+
 
 }
 
