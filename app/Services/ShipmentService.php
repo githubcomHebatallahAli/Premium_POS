@@ -116,7 +116,7 @@ public function update(Shipment $shipment, array $data): Shipment
         // حذف جميع المنتجات المرتبطة بالشحنة باستخدام نموذج Pivot
         $shipment->shipmentProducts()->delete();
 
-        // تحديث بيانات الشحنة الأساسية
+        
         $shipment->update([
             'supplier_id' => $data['supplier_id'],
             'importer' => $data['importer'] ?? $shipment->importer,
@@ -147,7 +147,6 @@ public function update(Shipment $shipment, array $data): Shipment
 
             $totalPrice = $productData['price'] ?? $productData['quantity'] * $unitPrice;
 
-            // إنشاء سجل جديد في جدول المنتجات المرتبطة باستخدام نموذج Pivot
             ShipmentProduct::create([
                 'shipment_id' => $shipment->id,
                 'product_id' => $product->id,
@@ -161,13 +160,11 @@ public function update(Shipment $shipment, array $data): Shipment
             $total += $totalPrice;
         }
 
-        // حساب الإجماليات
+       
         $this->calculateTotals($shipment, $total);
 
-        // تحديث عدد منتجات الشحنة
         $shipment->updateShipmentProductsCount();
 
-        // إعادة الشحنة مع العلانات المحدثة
         return $shipment->fresh(['products.variants', 'supplier', 'shipmentProducts.variant']);
     });
 }

@@ -9,120 +9,372 @@ use Illuminate\Support\Facades\DB;
 
 class InvoiceService
 {
-public function create(array $data): Invoice
-{
-    return DB::transaction(function () use ($data) {
-        $invoice = Invoice::create([
-            'customerName' => $data['customerName'],
-            'customerPhone' => $data['customerPhone'],
-            'admin_id' => auth()->id(),
-            // 'status' => $data['status'] ?? 'completed',
-            'payment' => $data['payment'] ?? null,
-            'pullType' => $data['pullType'],
-            'discount' => $data['discount'] ?? 0,
-            'discountType' => $data['discountType'] ?? null,
-            'extraAmount' => $data['extraAmount'] ?? 0,
-            'taxType' => $data['taxType'] ?? null,
-            'paidAmount' => $data['paidAmount'] ?? 0,
-            'creationDate' => now(),
-        ]);
+// public function create(array $data): Invoice
+// {
+//     return DB::transaction(function () use ($data) {
+//         $invoice = Invoice::create([
+//             'customerName' => $data['customerName'],
+//             'customerPhone' => $data['customerPhone'],
+//             'admin_id' => auth()->id(),
+//             // 'status' => $data['status'] ?? 'completed',
+//             'payment' => $data['payment'] ?? null,
+//             'pullType' => $data['pullType'],
+//             'discount' => $data['discount'] ?? 0,
+//             'discountType' => $data['discountType'] ?? null,
+//             'extraAmount' => $data['extraAmount'] ?? 0,
+//             'taxType' => $data['taxType'] ?? null,
+//             'paidAmount' => $data['paidAmount'] ?? 0,
+//             'creationDate' => now(),
+//         ]);
 
-        $total = 0;
-        $profit = 0;
+//         $total = 0;
+//         $profit = 0;
 
-        foreach ($data['products'] as $productData) {
-            $productId = $productData['id'];
-            $variantId = $productData['product_variant_id'] ?? null;
-            $quantity = $productData['quantity'];
+//         foreach ($data['products'] as $productData) {
+//             $productId = $productData['id'];
+//             $variantId = $productData['product_variant_id'] ?? null;
+//             $quantity = $productData['quantity'];
 
-            $product = Product::findOrFail($productId);
+//             $product = Product::findOrFail($productId);
 
-            if ($data['pullType'] === 'fifo') {
-                // نظام FIFO
-                $availableStocks = ShipmentProduct::where('product_id', $productId)
-                    ->when($variantId, function ($query) use ($variantId) {
-                        return $query->where('product_variant_id', $variantId);
-                    })
-                    ->where('remainingQuantity', '>', 0) // استخدام الاسم الحالي
-                    ->orderBy('created_at')
-                    ->get();
+//             if ($data['pullType'] === 'fifo') {
+//                 // نظام FIFO
+//                 $availableStocks = ShipmentProduct::where('product_id', $productId)
+//                     ->when($variantId, function ($query) use ($variantId) {
+//                         return $query->where('product_variant_id', $variantId);
+//                     })
+//                     ->where('remainingQuantity', '>', 0) // استخدام الاسم الحالي
+//                     ->orderBy('created_at')
+//                     ->get();
                 
-                $remainingNeeded = $quantity;
-                $lineTotal = 0;
-                $lineProfit = 0;
+//                 $remainingNeeded = $quantity;
+//                 $lineTotal = 0;
+//                 $lineProfit = 0;
 
-                foreach ($availableStocks as $stock) {
-                    if ($remainingNeeded <= 0) break;
+//                 foreach ($availableStocks as $stock) {
+//                     if ($remainingNeeded <= 0) break;
 
-                    $quantityToTake = min($remainingNeeded, $stock->remainingQuantity); // استخدام الاسم الحالي
+//                     $quantityToTake = min($remainingNeeded, $stock->remainingQuantity); // استخدام الاسم الحالي
                     
                    
-                    $stock->decrement('remainingQuantity', $quantityToTake); // استخدام الاسم الحالي
+//                     $stock->decrement('remainingQuantity', $quantityToTake); // استخدام الاسم الحالي
                     
-                    // حساب الأسعار (سعر البيع من المنتج - سعر الشراء من الشحنة)
-                    $sellingPrice = $product->sellingPrice; // من جدول products
-                    $purchasePrice = $stock->unitPrice; // من جدول shipment_products (سعر الشراء)
+//                     // حساب الأسعار (سعر البيع من المنتج - سعر الشراء من الشحنة)
+//                     $sellingPrice = $product->sellingPrice; // من جدول products
+//                     $purchasePrice = $stock->unitPrice; // من جدول shipment_products (سعر الشراء)
                     
-                    $subTotal = $quantityToTake * $sellingPrice;
-                    $subProfit = ($sellingPrice - $purchasePrice) * $quantityToTake;
+//                     $subTotal = $quantityToTake * $sellingPrice;
+//                     $subProfit = ($sellingPrice - $purchasePrice) * $quantityToTake;
 
-                    // إضافة للفاتورة - باستخدام الحقول الموجودة حالياً
+//                     // إضافة للفاتورة - باستخدام الحقول الموجودة حالياً
+//                     $invoice->products()->attach($product->id, [
+//                         'shipment_product_id' => $stock->id,
+//                         'product_variant_id' => $variantId,
+//                         'quantity' => $quantityToTake,
+//                         // سيتم حساب total و profit فقط (الحقول الموجودة)
+//                         'total' => $subTotal,
+//                         'profit' => $subProfit,
+//                     ]);
+
+//                     $lineTotal += $subTotal;
+//                     $lineProfit += $subProfit;
+//                     $remainingNeeded -= $quantityToTake;
+//                 }
+
+//                 if ($remainingNeeded > 0) {
+//                     throw new \Exception("Not enough stock for product {$product->name}");
+//                 }
+
+//             } else {
+//                 // نظام manual
+//                 $shipmentProduct = ShipmentProduct::findOrFail($productData['shipment_product_id']);
+                
+//                 if ($shipmentProduct->remainingQuantity < $quantity) { // استخدام الاسم الحالي
+//                     throw new \Exception("Not enough stock for product {$product->name}");
+//                 }
+
+//                 $shipmentProduct->decrement('remainingQuantity', $quantity); // استخدام الاسم الحالي
+
+//                 // حساب الأسعار
+//                 $sellingPrice = $product->sellingPrice; // من جدول products
+//                 $purchasePrice = $shipmentProduct->unitPrice; // من جدول shipment_products
+                
+//                 $lineTotal = $sellingPrice * $quantity;
+//                 $lineProfit = ($sellingPrice - $purchasePrice) * $quantity;
+
+//                 $invoice->products()->attach($product->id, [
+//                     'shipment_product_id' => $shipmentProduct->id,
+//                     'product_variant_id' => $variantId,
+//                     'quantity' => $quantity,
+//                     // استخدام الحقول الموجودة فقط
+//                     'total' => $lineTotal,
+//                     'profit' => $lineProfit,
+//                 ]);
+//             }
+
+//             $total += $lineTotal;
+//             $profit += $lineProfit;
+//         }
+
+//         // حساب الإجماليات
+//         $calculated = $this->calculateTotals($invoice, $total, $profit);
+//         $invoice->update($calculated);
+
+//         return $invoice->fresh(['products.variants', 'invoiceProducts.shipmentProduct']);
+//     });
+// }
+
+//     public function update(Invoice $invoice, array $data): Invoice
+//     {
+//         return DB::transaction(function () use ($invoice, $data) {
+//             $invoice->products()->detach();
+
+//             $invoice->update([
+//                 'customerName' => $data['customerName'],
+//                 'customerPhone' => $data['customerPhone'],
+//                 'status' => $data['status'] ?? $invoice->status,
+//                 'payment' => $data['payment'] ?? $invoice->payment,
+//                 'pullType' => $data['pullType'],
+//                 'discount' => $data['discount'] ?? 0,
+//                 'discountType' => $data['discountType'] ?? $invoice->discountType,
+//                 'extraAmount' => $data['extraAmount'] ?? 0,
+//                 'taxType' => $data['taxType'] ?? $invoice->taxType,
+//                 'paidAmount' => $data['paidAmount'] ?? 0,
+//             ]);
+
+//             $total = 0;
+//             $profit = 0;
+
+//             foreach ($data['products'] as $p) {
+//                 $product = Product::findOrFail($p['id']);
+
+//                 if ($data['pullType'] === 'fifo') {
+//                     $shipmentProduct = ShipmentProduct::where('product_id', $product->id)
+//                         ->where('remainingQuantity', '>', 0)
+//                         ->orderBy('created_at')
+//                         ->first();
+//                 } else {
+//                     $shipmentProduct = ShipmentProduct::where('product_id', $product->id)
+//                         ->where('shipment_id', $p['shipment_id'])
+//                         ->first();
+//                 }
+
+//                 if (!$shipmentProduct || $shipmentProduct->remainingQuantity < $p['quantity']) {
+//                     throw new \Exception("Not enough stock for product {$product->name}");
+//                 }
+
+//                 $shipmentProduct->decrement('remainingQuantity', $p['quantity']);
+
+//                 $lineTotal = $product->sellingPrice * $p['quantity'];
+//                 $lineProfit = ($product->sellingPrice - $shipmentProduct->purchasePrice) * $p['quantity'];
+
+//                 $invoice->products()->attach($product->id, [
+//                     'shipment_id' => $shipmentProduct->shipment_id,
+//                     'quantity' => $p['quantity'],
+//                     'price' => $product->sellingPrice,
+//                     'total' => $lineTotal,
+//                     'profit' => $lineProfit,
+//                 ]);
+
+//                 $total += $lineTotal;
+//                 $profit += $lineProfit;
+//             }
+
+//             $calculated = $this->calculateTotals($invoice, $total, $profit);
+
+//             $invoice->update($calculated);
+
+//             return $invoice->fresh('products');
+//         });
+//     }
+
+//     public function fullReturn(Invoice $invoice): Invoice
+//     {
+//         return DB::transaction(function () use ($invoice) {
+//             foreach ($invoice->products as $p) {
+//                 $shipmentProduct = ShipmentProduct::where('product_id', $p->id)
+//                     ->where('shipment_id', $p->pivot->shipment_id)
+//                     ->first();
+
+//                 $shipmentProduct->increment('remainingQuantity', $p->pivot->quantity);
+//             }
+
+//             $invoice->update(['status' => 'return']);
+
+//             return $invoice->fresh('products');
+//         });
+//     }
+
+//     public function partialReturn(Invoice $invoice, array $products): Invoice
+//     {
+//         return DB::transaction(function () use ($invoice, $products) {
+//             foreach ($products as $p) {
+//                 $pivot = $invoice->products()->where('product_id', $p['id'])->first();
+
+//                 if (!$pivot) continue;
+
+//                 $returnQty = min($p['quantity'], $pivot->pivot->quantity);
+
+//                 $shipmentProduct = ShipmentProduct::where('product_id', $pivot->id)
+//                     ->where('shipment_id', $pivot->pivot->shipment_id)
+//                     ->first();
+
+//                 $shipmentProduct->increment('remainingQuantity', $returnQty);
+
+//                 $invoice->products()->updateExistingPivot($pivot->id, [
+//                     'quantity' => $pivot->pivot->quantity - $returnQty,
+//                     'total' => $pivot->pivot->price * ($pivot->pivot->quantity - $returnQty),
+//                     'profit' => ($pivot->pivot->price - $shipmentProduct->purchasePrice) * ($pivot->pivot->quantity - $returnQty),
+//                 ]);
+//             }
+
+//             $total = $invoice->products->sum('pivot.total');
+//             $profit = $invoice->products->sum('pivot.profit');
+
+//             $calculated = $this->calculateTotals($invoice, $total, $profit);
+
+//             $invoice->update(array_merge($calculated, ['status' => 'partialReturn']));
+
+//             return $invoice->fresh('products');
+//         });
+//     }
+
+//     public function calculateTotals(Invoice $invoice, float $total, float $profit): array
+//     {
+//         $discount = $invoice->discount ?? 0;
+//         if ($invoice->discountType === 'percentage') {
+//             $discount = ($total * $discount) / 100;
+//         }
+
+//         $extra = $invoice->extraAmount ?? 0;
+//         if ($invoice->taxType === 'percentage') {
+//             $extra = ($total * $extra) / 100;
+//         }
+
+//         $final = $total - $discount + $extra;
+//         $remaining = $final - ($invoice->paidAmount ?? 0);
+
+//         return [
+//             'totalInvoicePrice' => $total,
+//             'invoiceAfterDiscount' => $final,
+//             'profit' => $profit,
+//             'remainingAmount' => $remaining > 0 ? $remaining : 0,
+//         ];
+//     }
+
+//     public function recalculateTotals(Invoice $invoice): void
+// {
+//     $total = $shipment->products->sum(function($product) {
+//         return $product->pivot->price;
+//     });
+    
+//     $this->calculateTotals($shipment, $total);
+// }
+
+    public function create(array $data): Invoice
+    {
+        return DB::transaction(function () use ($data) {
+            $invoice = Invoice::create([
+                'customerName'   => $data['customerName'],
+                'customerPhone'  => $data['customerPhone'],
+                'admin_id'       => auth()->id(),
+                'payment'        => $data['payment'] ?? null,
+                'pullType'       => $data['pullType'],
+                'discount'       => $data['discount'] ?? 0,
+                'discountType'   => $data['discountType'] ?? null,
+                'extraAmount'    => $data['extraAmount'] ?? 0,
+                'taxType'        => $data['taxType'] ?? null,
+                'paidAmount'     => $data['paidAmount'] ?? 0,
+                'creationDate'   => now(),
+            ]);
+
+            $total  = 0;
+            $profit = 0;
+
+            foreach ($data['products'] as $productData) {
+                $productId = $productData['id'];
+                $variantId = $productData['product_variant_id'] ?? null;
+                $quantity  = $productData['quantity'];
+
+                $product = Product::findOrFail($productId);
+
+                if ($data['pullType'] === 'fifo') {
+                    // FIFO
+                    $availableStocks = ShipmentProduct::where('product_id', $productId)
+                        ->when($variantId, fn($q) => $q->where('product_variant_id', $variantId))
+                        ->where('remainingQuantity', '>', 0)
+                        ->orderBy('created_at')
+                        ->get();
+
+                    $remainingNeeded = $quantity;
+                    $lineTotal       = 0;
+                    $lineProfit      = 0;
+
+                    foreach ($availableStocks as $stock) {
+                        if ($remainingNeeded <= 0) break;
+
+                        $takeQty = min($remainingNeeded, $stock->remainingQuantity);
+                        $stock->decrement('remainingQuantity', $takeQty);
+
+                        $sellingPrice = $product->sellingPrice;
+                        $purchasePrice = $stock->unitPrice;
+
+                        $subTotal  = $takeQty * $sellingPrice;
+                        $subProfit = ($sellingPrice - $purchasePrice) * $takeQty;
+
+                        $invoice->products()->attach($product->id, [
+                            'shipment_product_id' => $stock->id,
+                            'product_variant_id'  => $variantId,
+                            'quantity'            => $takeQty,
+                            'total'               => $subTotal,
+                            'profit'              => $subProfit,
+                        ]);
+
+                        $lineTotal  += $subTotal;
+                        $lineProfit += $subProfit;
+                        $remainingNeeded -= $takeQty;
+                    }
+
+                    if ($remainingNeeded > 0) {
+                        throw new \Exception("Not enough stock for product {$product->name}");
+                    }
+                } else {
+                    // Manual
+                    $shipmentProduct = ShipmentProduct::findOrFail($productData['shipment_product_id']);
+
+                    if ($shipmentProduct->remainingQuantity < $quantity) {
+                        throw new \Exception("Not enough stock for product {$product->name}");
+                    }
+
+                    $shipmentProduct->decrement('remainingQuantity', $quantity);
+
+                    $sellingPrice  = $product->sellingPrice;
+                    $purchasePrice = $shipmentProduct->unitPrice;
+
+                    $lineTotal  = $sellingPrice * $quantity;
+                    $lineProfit = ($sellingPrice - $purchasePrice) * $quantity;
+
                     $invoice->products()->attach($product->id, [
-                        'shipment_product_id' => $stock->id,
-                        'product_variant_id' => $variantId,
-                        'quantity' => $quantityToTake,
-                        // سيتم حساب total و profit فقط (الحقول الموجودة)
-                        'total' => $subTotal,
-                        'profit' => $subProfit,
+                        'shipment_product_id' => $shipmentProduct->id,
+                        'product_variant_id'  => $variantId,
+                        'quantity'            => $quantity,
+                        'total'               => $lineTotal,
+                        'profit'              => $lineProfit,
                     ]);
-
-                    $lineTotal += $subTotal;
-                    $lineProfit += $subProfit;
-                    $remainingNeeded -= $quantityToTake;
                 }
 
-                if ($remainingNeeded > 0) {
-                    throw new \Exception("Not enough stock for product {$product->name}");
-                }
-
-            } else {
-                // نظام manual
-                $shipmentProduct = ShipmentProduct::findOrFail($productData['shipment_product_id']);
-                
-                if ($shipmentProduct->remainingQuantity < $quantity) { // استخدام الاسم الحالي
-                    throw new \Exception("Not enough stock for product {$product->name}");
-                }
-
-                $shipmentProduct->decrement('remainingQuantity', $quantity); // استخدام الاسم الحالي
-
-                // حساب الأسعار
-                $sellingPrice = $product->sellingPrice; // من جدول products
-                $purchasePrice = $shipmentProduct->unitPrice; // من جدول shipment_products
-                
-                $lineTotal = $sellingPrice * $quantity;
-                $lineProfit = ($sellingPrice - $purchasePrice) * $quantity;
-
-                $invoice->products()->attach($product->id, [
-                    'shipment_product_id' => $shipmentProduct->id,
-                    'product_variant_id' => $variantId,
-                    'quantity' => $quantity,
-                    // استخدام الحقول الموجودة فقط
-                    'total' => $lineTotal,
-                    'profit' => $lineProfit,
-                ]);
+                $total  += $lineTotal;
+                $profit += $lineProfit;
             }
 
-            $total += $lineTotal;
-            $profit += $lineProfit;
-        }
+            // إجماليات + عدد المنتجات
+            $calculated = $this->calculateTotals($invoice, $total, $profit);
+            $invoice->update($calculated);
+            $invoice->updateInvoiceProductCount();
 
-        // حساب الإجماليات
-        $calculated = $this->calculateTotals($invoice, $total, $profit);
-        $invoice->update($calculated);
-
-        return $invoice->fresh(['products.variants', 'invoiceProducts.shipmentProduct']);
-    });
-}
+            return $invoice->fresh(['products.variants', 'invoiceProducts.shipmentProduct']);
+        });
+    }
 
     public function update(Invoice $invoice, array $data): Invoice
     {
@@ -131,18 +383,18 @@ public function create(array $data): Invoice
 
             $invoice->update([
                 'customerName' => $data['customerName'],
-                'customerPhone' => $data['customerPhone'],
-                'status' => $data['status'] ?? $invoice->status,
-                'payment' => $data['payment'] ?? $invoice->payment,
-                'pullType' => $data['pullType'],
-                'discount' => $data['discount'] ?? 0,
+                'customerPhone'=> $data['customerPhone'],
+                'status'       => $data['status'] ?? $invoice->status,
+                'payment'      => $data['payment'] ?? $invoice->payment,
+                'pullType'     => $data['pullType'],
+                'discount'     => $data['discount'] ?? 0,
                 'discountType' => $data['discountType'] ?? $invoice->discountType,
-                'extraAmount' => $data['extraAmount'] ?? 0,
-                'taxType' => $data['taxType'] ?? $invoice->taxType,
-                'paidAmount' => $data['paidAmount'] ?? 0,
+                'extraAmount'  => $data['extraAmount'] ?? 0,
+                'taxType'      => $data['taxType'] ?? $invoice->taxType,
+                'paidAmount'   => $data['paidAmount'] ?? 0,
             ]);
 
-            $total = 0;
+            $total  = 0;
             $profit = 0;
 
             foreach ($data['products'] as $p) {
@@ -165,26 +417,25 @@ public function create(array $data): Invoice
 
                 $shipmentProduct->decrement('remainingQuantity', $p['quantity']);
 
-                $lineTotal = $product->sellingPrice * $p['quantity'];
-                $lineProfit = ($product->sellingPrice - $shipmentProduct->purchasePrice) * $p['quantity'];
+                $lineTotal  = $product->sellingPrice * $p['quantity'];
+                $lineProfit = ($product->sellingPrice - $shipmentProduct->unitPrice) * $p['quantity'];
 
                 $invoice->products()->attach($product->id, [
-                    'shipment_id' => $shipmentProduct->shipment_id,
-                    'quantity' => $p['quantity'],
-                    'price' => $product->sellingPrice,
-                    'total' => $lineTotal,
-                    'profit' => $lineProfit,
+                    'shipment_product_id' => $shipmentProduct->id,
+                    'quantity'            => $p['quantity'],
+                    'total'               => $lineTotal,
+                    'profit'              => $lineProfit,
                 ]);
 
-                $total += $lineTotal;
+                $total  += $lineTotal;
                 $profit += $lineProfit;
             }
 
             $calculated = $this->calculateTotals($invoice, $total, $profit);
-
             $invoice->update($calculated);
+            $invoice->updateInvoiceProductCount();
 
-            return $invoice->fresh('products');
+            return $invoice->fresh(['products']);
         });
     }
 
@@ -192,52 +443,68 @@ public function create(array $data): Invoice
     {
         return DB::transaction(function () use ($invoice) {
             foreach ($invoice->products as $p) {
-                $shipmentProduct = ShipmentProduct::where('product_id', $p->id)
-                    ->where('shipment_id', $p->pivot->shipment_id)
-                    ->first();
-
+                $shipmentProduct = ShipmentProduct::findOrFail($p->pivot->shipment_product_id);
                 $shipmentProduct->increment('remainingQuantity', $p->pivot->quantity);
             }
 
-            $invoice->update(['status' => 'return']);
+            $invoice->update([
+                'status'       => 'return',
+                'returnReason' => request('returnReason', 'إرجاع كامل'),
+            ]);
 
-            return $invoice->fresh('products');
+            $invoice->updateInvoiceProductCount();
+
+            return $invoice->fresh(['products']);
         });
     }
 
-    public function partialReturn(Invoice $invoice, array $products): Invoice
-    {
-        return DB::transaction(function () use ($invoice, $products) {
-            foreach ($products as $p) {
-                $pivot = $invoice->products()->where('product_id', $p['id'])->first();
+public function partialReturn(Invoice $invoice, array $products): Invoice
+{
+    return DB::transaction(function () use ($invoice, $products) {
+        $globalReason = request('returnReason', 'إرجاع جزئي');
 
-                if (!$pivot) continue;
+        foreach ($products as $p) {
+            $pivot = $invoice->products()->where('product_id', $p['id'])->first();
+            if (!$pivot) continue;
 
-                $returnQty = min($p['quantity'], $pivot->pivot->quantity);
+            $returnQty = min($p['quantity'], $pivot->pivot->quantity);
 
-                $shipmentProduct = ShipmentProduct::where('product_id', $pivot->id)
-                    ->where('shipment_id', $pivot->pivot->shipment_id)
-                    ->first();
+            $shipmentProduct = ShipmentProduct::findOrFail($pivot->pivot->shipment_product_id);
+            $shipmentProduct->increment('remainingQuantity', $returnQty);
 
-                $shipmentProduct->increment('remainingQuantity', $returnQty);
+            $newQty = $pivot->pivot->quantity - $returnQty;
 
+            if ($newQty > 0) {
                 $invoice->products()->updateExistingPivot($pivot->id, [
-                    'quantity' => $pivot->pivot->quantity - $returnQty,
-                    'total' => $pivot->pivot->price * ($pivot->pivot->quantity - $returnQty),
-                    'profit' => ($pivot->pivot->price - $shipmentProduct->purchasePrice) * ($pivot->pivot->quantity - $returnQty),
+                    'quantity'     => $newQty,
+                    'total'        => $pivot->sellingPrice * $newQty,
+                    'profit'       => ($pivot->sellingPrice - $shipmentProduct->unitPrice) * $newQty,
+                    'returnReason' => $p['reason'] ?? $globalReason,
                 ]);
+            } else {
+                $invoice->products()->updateExistingPivot($pivot->id, [
+                    'returnReason' => $p['reason'] ?? $globalReason,
+                ]);
+                $invoice->products()->detach($pivot->id);
             }
+        }
 
-            $total = $invoice->products->sum('pivot.total');
-            $profit = $invoice->products->sum('pivot.profit');
+        $total  = $invoice->products->sum(fn($prod) => $prod->pivot->total);
+        $profit = $invoice->products->sum(fn($prod) => $prod->pivot->profit);
 
-            $calculated = $this->calculateTotals($invoice, $total, $profit);
+        $calculated = $this->calculateTotals($invoice, $total, $profit);
 
-            $invoice->update(array_merge($calculated, ['status' => 'partialReturn']));
+        $invoice->update(array_merge($calculated, [
+            'status'       => 'partialReturn',
+            'returnReason' => $globalReason,
+        ]));
 
-            return $invoice->fresh('products');
-        });
-    }
+        $invoice->updateInvoiceProductCount();
+
+        return $invoice->fresh(['products']);
+    });
+}
+
 
     public function calculateTotals(Invoice $invoice, float $total, float $profit): array
     {
@@ -251,15 +518,25 @@ public function create(array $data): Invoice
             $extra = ($total * $extra) / 100;
         }
 
-        $final = $total - $discount + $extra;
+        $final     = $total - $discount + $extra;
         $remaining = $final - ($invoice->paidAmount ?? 0);
 
         return [
-            'totalInvoicePrice' => $total,
-            'invoiceAfterDiscount' => $final,
-            'profit' => $profit,
-            'remainingAmount' => $remaining > 0 ? $remaining : 0,
+            'totalInvoicePrice'   => $total,
+            'invoiceAfterDiscount'=> $final,
+            'profit'              => $profit,
+            'remainingAmount'     => $remaining > 0 ? $remaining : 0,
         ];
+    }
+
+    public function recalculateTotals(Invoice $invoice): void
+    {
+        $total  = $invoice->products->sum(fn($p) => $p->pivot->total);
+        $profit = $invoice->products->sum(fn($p) => $p->pivot->profit);
+
+        $calculated = $this->calculateTotals($invoice, $total, $profit);
+        $invoice->update($calculated);
+        $invoice->updateInvoiceProductCount();
     }
 }
 
