@@ -344,6 +344,7 @@ public function fullReturn(Shipment $shipment): Shipment
             $shipment->products()->updateExistingPivot($product->id, [
                 'quantity'     => 0,
                 'price'        => 0,
+                "unitPrice"    => 0,
                 'returnReason' => $reason,
                 'remainingQuantity' => 0,
             ]);
@@ -358,6 +359,14 @@ public function fullReturn(Shipment $shipment): Shipment
             'discount'       => 0,
             'extraAmount'    => 0,
             'paidAmount'     => 0,
+            "invoiceAfterDiscount" => 0,
+            'remainingAmount' => 0,
+            "discountType" => null,
+            "taxType" => null,
+            "payment" => null,
+            
+
+
         ]);
 
         return $shipment->fresh(['products', 'supplier']);
