@@ -319,10 +319,8 @@ public function fullReturn(Shipment $shipment): Shipment
     return DB::transaction(function () use ($shipment) {
         $reason = request('returnReason', 'إرجاع كامل');
 
-        // إجمالي الشحنة قبل الخصم والضريبة
         $total = $shipment->products->sum(fn($p) => $p->pivot->price);
 
-        // حساب الخصم والضريبة الكلية
         $discount = $shipment->discount ?? 0;
         $extra    = $shipment->extraAmount ?? 0;
 
@@ -348,10 +346,8 @@ public function fullReturn(Shipment $shipment): Shipment
                 'price'        => 0,
                 'returnReason' => $reason,
                 'remainingQuantity' => 0,
-               
             ]);
 
-            
         }
 
         $this->calculateTotals($shipment, 0);
