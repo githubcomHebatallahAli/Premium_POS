@@ -337,34 +337,31 @@ public function fullReturn(Shipment $shipment): Shipment
         foreach ($shipment->products as $product) {
             $pivot = $product->pivot;
 
-            // نسبة مساهمة المنتج في الإجمالي
             $share = $pivot->price / $total;
 
-            // نصيب المنتج من الخصم والضريبة
             $productDiscount = round($discountAmount * $share, 2);
             $productExtra    = round($extraAmount * $share, 2);
 
-            // السعر النهائي للمنتج بعد الخصم والضريبة
             $finalProductPrice = $pivot->price - $productDiscount + $productExtra;
-
-            // تصفير الكمية والسعر مع تسجيل السبب
             $shipment->products()->updateExistingPivot($product->id, [
                 'quantity'     => 0,
                 'price'        => 0,
                 'returnReason' => $reason,
+                'remainingQuantity' => 0,
+               
             ]);
 
-            // هنا ممكن تسجل قيمة المرتجع لو محتاجها في تقارير منفصلة
-            // $returnedValue = $finalProductPrice;
+            
         }
 
-        // تصفير الإجماليات
         $this->calculateTotals($shipment, 0);
 
-        // تحديث حالة الشحنة
         $shipment->update([
             'status'       => 'return',
             'returnReason' => $reason,
+            'discount'       => 0,
+            'extraAmount'    => 0,
+            'paidAmount'     => 0,
         ]);
 
         return $shipment->fresh(['products', 'supplier']);
