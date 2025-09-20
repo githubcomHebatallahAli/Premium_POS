@@ -364,9 +364,7 @@ public function fullReturn(Shipment $shipment): Shipment
             "discountType" => null,
             "taxType" => null,
             "payment" => null,
-            
-
-
+            "shipmentProductsCount" => 0,
         ]);
 
         return $shipment->fresh(['products', 'supplier']);
