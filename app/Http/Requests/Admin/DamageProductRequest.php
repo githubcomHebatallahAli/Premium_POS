@@ -26,10 +26,10 @@ class DamageProductRequest extends FormRequest
         return [
             'product_id' => 'required|exists:products,id',
             'product_variant_id' => 'nullable|exists:product_variants,id',
-            'shipment_id' => 'nullable|exists:shipments,id',
+            'shipment_id' => 'required|exists:shipments,id',
             'quantity' => 'required|integer|min:1',
             'reason' => 'nullable|string',
-            'status' => 'required|in:damage,return,repaired',
+            'status' => 'nullable|in:damage,return,repaired',
         ];
     }
 

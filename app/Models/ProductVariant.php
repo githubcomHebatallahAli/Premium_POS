@@ -29,7 +29,12 @@ class ProductVariant extends Model
         return $this->belongsTo(Product::class);
     }
 
-  
+
+
+       public function damages()
+     {
+         return $this->hasMany(DamageProduct::class);
+     }
 
     
 

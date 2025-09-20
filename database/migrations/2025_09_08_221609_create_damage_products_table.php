@@ -14,11 +14,11 @@ return new class extends Migration
         Schema::create('damage_products', function (Blueprint $table) {
             $table->id();
             $table->foreignId('product_id')->constrained('products')->cascadeOnDelete();
-            $table->foreignId('product_variant_id')->constrained('product_variants')->cascadeOnDelete();
+            $table->foreignId('product_variant_id')->nullable()->constrained('product_variants')->cascadeOnDelete();
             $table->foreignId('shipment_id')->constrained('shipments')->cascadeOnDelete();
             $table->integer('quantity');
             $table->text('reason')->nullable();
-            $table->enum('status', ['damage','return','repaired'])->nullable();
+            $table->enum('status', ['damage','return','repaired'])->default('damage');
             $table->timestamp('creationDate')->nullable();
             $table->softDeletes();
             $table->timestamps();

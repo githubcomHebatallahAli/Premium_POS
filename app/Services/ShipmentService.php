@@ -377,10 +377,8 @@ public function partialReturn(Shipment $shipment, array $products): Shipment
     return DB::transaction(function () use ($shipment, $products) {
         $globalReturnReason = request('returnReason', 'إرجاع جزئي');
 
-        // إجمالي الشحنة قبل الخصم والضريبة
         $total = $shipment->products->sum(fn($p) => $p->pivot->price);
 
-        // حساب الخصم والضريبة الكلية
         $discount = $shipment->discount ?? 0;
         $extra    = $shipment->extraAmount ?? 0;
 
@@ -401,17 +399,16 @@ public function partialReturn(Shipment $shipment, array $products): Shipment
             $reason     = $productData['reason'] ?? $globalReturnReason;
             $newQty     = $pivot->quantity - $returnQty;
 
-            // نسبة مساهمة المنتج في الإجمالي
+           
             $share = $pivot->price / $total;
 
-            // نصيب المنتج من الخصم والضريبة
+          
             $productDiscount = round($discountAmount * $share, 2);
             $productExtra    = round($extraAmount * $share, 2);
 
-            // السعر النهائي للمنتج بعد الخصم والضريبة
+           
             $finalProductPrice = $pivot->price - $productDiscount + $productExtra;
 
-            // لو رجعنا جزء من الكمية → نوزع الخصم والضريبة بنفس النسبة
             $unitFinalPrice = $finalProductPrice / $pivot->quantity;
             $returnedValue  = $unitFinalPrice * $returnQty;
 
@@ -422,7 +419,6 @@ public function partialReturn(Shipment $shipment, array $products): Shipment
                     'returnReason' => $reason,
                 ]);
             } else {
-                // تصفير بدل ما نعمل detach
                 $shipment->products()->updateExistingPivot($productModel->id, [
                     'quantity'     => 0,
                     'price'        => 0,
@@ -430,14 +426,11 @@ public function partialReturn(Shipment $shipment, array $products): Shipment
                 ]);
             }
 
-            // نخصم قيمة المرتجع (بما فيها حصته من الخصم والضريبة) من الإجمالي
             $total -= $returnedValue;
         }
 
-        // إعادة حساب الإجماليات بعد التوزيع
         $this->calculateTotals($shipment, $total);
 
-        // تحديث حالة الشحنة
         $shipment->update([
             'status'       => 'partialReturn',
             'returnReason' => $globalReturnReason,
@@ -531,7 +524,7 @@ public function recalculateTotals(Shipment $shipment): void
 
             $finalProductPrice = $pivot->price - $productDiscount + $productExtra;
             $shipment->products()->updateExistingPivot($product->id, [
-                'final_price' => $finalProductPrice,
+                'price' => $finalProductPrice,
             ]);
         }
     }
