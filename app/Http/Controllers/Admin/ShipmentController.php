@@ -112,9 +112,41 @@ public function showAll(Request $request)
     ]);
 }
 
+// public function updatePaidAmount(UpdatePaidAmountRequest $request, $id)
+// {
+//     $shipment = Shipment::findOrFail($id);
+//     $paidAmount = $request->paidAmount;
+
+//     if ($paidAmount > $shipment->remainingAmount) {
+//         return response()->json([
+//             'message' => 'المبلغ المدفوع يتجاوز المبلغ المتبقي.',
+//         ], 400);
+//     }
+
+//     $shipment->paidAmount += $paidAmount;
+//     $remainingAmount = $shipment->invoiceAfterDiscount - $shipment->paidAmount;
+//     $shipment->remainingAmount = $remainingAmount;
+
+
+//     if ($remainingAmount <= 0) {
+//         $shipment->status = 'completed';
+//     } else {
+//         $shipment->status = 'indebted'; 
+//     }
+
+//     $shipment->save();
+
+//     return response()->json([
+//         'message' => 'تم تحديث المبلغ المدفوع بنجاح.',
+//         'data' => new ShipmentResource($shipment),
+//     ]);
+// }
+
 public function updatePaidAmount(UpdatePaidAmountRequest $request, $id)
 {
     $shipment = Shipment::findOrFail($id);
+    // $this->authorize('updatePaidAmount', $shipment);
+
     $paidAmount = $request->paidAmount;
 
     if ($paidAmount > $shipment->remainingAmount) {
@@ -124,21 +156,15 @@ public function updatePaidAmount(UpdatePaidAmountRequest $request, $id)
     }
 
     $shipment->paidAmount += $paidAmount;
-    $remainingAmount = $shipment->invoiceAfterDiscount - $shipment->paidAmount;
-    $shipment->remainingAmount = $remainingAmount;
-
-
-    if ($remainingAmount <= 0) {
-        $shipment->status = 'completed';
-    } else {
-        $shipment->status = 'indebted'; 
-    }
-
     $shipment->save();
+
+    $total  = $shipment->sum(fn($p) => $p->pivot->total);
+     
+    $this->shipmentService->calculateTotals($shipment, $total);
 
     return response()->json([
         'message' => 'تم تحديث المبلغ المدفوع بنجاح.',
-        'data' => new ShipmentResource($shipment),
+        'data'    => new ShipmentResource($shipment),
     ]);
 }
 
