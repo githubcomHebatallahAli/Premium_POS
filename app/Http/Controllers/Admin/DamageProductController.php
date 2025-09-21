@@ -100,8 +100,12 @@ class DamageProductController extends Controller
         }
         // $this->authorize('update',$DamageProduct);
            $DamageProduct->update([
-            "name" => $request->name,
-            'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
+                "product_id" => $request->product_id,
+                "product_variant_id" => $request->product_variant_id,
+                "shipment_id" => $request->shipment_id,
+                "quantity" => $request->quantity,
+                "reason" => $request->reason,
+                'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
             ]);
 
            $DamageProduct->save();
