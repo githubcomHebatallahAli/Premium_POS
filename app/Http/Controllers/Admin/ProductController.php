@@ -53,10 +53,8 @@ class ProductController extends Controller
         // $this->authorize('showAll',Product::class);
           $this->authorize('manage_users');
       
-  $searchTerm = $request->input('search', '');
+        $searchTerm = $request->input('search', '');
         $query = Product::with(['category', 'brand', 'variants'])
-
-        
             ->where('name', 'like', '%' . $searchTerm . '%');
 
         if ($request->filled('brand_id')) {

@@ -15,11 +15,20 @@ class DamageProductController extends Controller
         public function showAll(Request $request)
     {
         // $this->authorize('showAll',DamageProduct::class);
-        $searchTerm = $request->input('search', '');
+        $query  = DamageProduct::with(['product','variant','shipment']);
+          if ($request->filled('brand_id')) {
+            $query->where('brand_id', $request->brand_id);
+        }
 
-        $DamageProduct = DamageProduct::withCount('products')
-        ->where('name', 'like', '%' . $searchTerm . '%')
-        ->orderBy('created_at', 'desc')
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        
+        $DamageProduct = $query->orderBy('created_at', 'desc')
         ->paginate(10);
 
                   return response()->json([
