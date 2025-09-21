@@ -16,7 +16,7 @@ class DamageProductController extends Controller
         public function showAll(Request $request)
     {
         // $this->authorize('showAll',DamageProduct::class);
-        $query  = DamageProduct::with(['product','variant','shipment']);
+        $query  = DamageProduct::with(['product','variant','shipment', 'product.category', 'product.brand']);
           if ($request->filled('brand_id')) {
             $query->where('brand_id', $request->brand_id);
         }
@@ -51,7 +51,7 @@ class DamageProductController extends Controller
     {
         // $this->authorize('showAllCat',DamageProduct::class);
 
-        $DamageProduct = DamageProduct::withCount('products')->get();
+        $DamageProduct = DamageProduct::with(['product','variant','shipment', 'product.category', 'product.brand'])->get();
 
                   return response()->json([
                       'data' =>  DamageProductResource::collection($DamageProduct),
@@ -81,7 +81,7 @@ class DamageProductController extends Controller
         public function edit(string $id)
         {
             // $this->authorize('manage_users');
-        $DamageProduct = DamageProduct::with(['product', 'variant', 'shipment'])
+        $DamageProduct = DamageProduct::with(['product', 'variant', 'shipment', 'product.category', 'product.brand'])
         ->find($id);
 
             if (!$DamageProduct) {
