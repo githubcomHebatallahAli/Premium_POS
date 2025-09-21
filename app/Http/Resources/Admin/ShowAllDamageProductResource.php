@@ -12,25 +12,7 @@ class ShowAllDamageProductResource extends JsonResource
     {
         return [
             "id" => $this->id,
-            "product" => $this->whenLoaded("product", function () {
-                return [
-                    "id" => $this->product->id,
-                    "name" => $this->product->name,
-                    "mainImage" => $this->product->mainImage,
-                    "category" => $this->whenLoaded("product.category", function () {
-                        return [
-                            "id" => $this->product->category->id,
-                            "name" => $this->product->category->name,
-                        ];
-                    }),
-                    "brand" => $this->whenLoaded("product.brand", function () {
-                        return $this->product->brand ? [
-                            "id" => $this->product->brand->id,
-                            "name" => $this->product->brand->name,
-                        ] : null;
-                    }),
-                ];
-            }),
+            'product' => new ProductResource($this->whenLoaded('product')),
             "quantity" => $this->quantity,
             "reason" => $this->reason,
             "status" => $this->status,
