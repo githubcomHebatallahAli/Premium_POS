@@ -71,7 +71,7 @@ class DamageProductController extends Controller
         public function edit(string $id)
         {
             // $this->authorize('manage_users');
-        $DamageProduct = DamageProduct::with('products')
+        $DamageProduct = DamageProduct::with('product')
         ->find($id);
 
             if (!$DamageProduct) {
