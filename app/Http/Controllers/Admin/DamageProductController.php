@@ -17,13 +17,17 @@ class DamageProductController extends Controller
     {
         // $this->authorize('showAll',DamageProduct::class);
         $query  = DamageProduct::with(['product','variant','shipment', 'product.category', 'product.brand']);
-          if ($request->filled('brand_id')) {
-            $query->where('brand_id', $request->brand_id);
-        }
+         if ($request->filled('brand_id')) {
+    $query->whereHas('product', function ($q) use ($request) {
+        $q->where('brand_id', $request->brand_id);
+    });
+}
 
-        if ($request->filled('category_id')) {
-            $query->where('category_id', $request->category_id);
-        }
+if ($request->filled('category_id')) {
+    $query->whereHas('product', function ($q) use ($request) {
+        $q->where('category_id', $request->category_id);
+    });
+}
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
