@@ -17,13 +17,13 @@ class ShowAllDamageProductResource extends JsonResource
                     "id" => $this->product->id,
                     "name" => $this->product->name,
                     "mainImage" => $this->product->mainImage,
-                     "category" => $this->product->whenLoaded("category", function () {
+                    "category" => $this->whenLoaded("product.category", function () {
                         return [
                             "id" => $this->product->category->id,
                             "name" => $this->product->category->name,
                         ];
                     }),
-                    "brand" => $this->product->whenLoaded("brand", function () {
+                    "brand" => $this->whenLoaded("product.brand", function () {
                         return $this->product->brand ? [
                             "id" => $this->product->brand->id,
                             "name" => $this->product->brand->name,
@@ -31,7 +31,6 @@ class ShowAllDamageProductResource extends JsonResource
                     }),
                 ];
             }),
-           
             "quantity" => $this->quantity,
             "reason" => $this->reason,
             "status" => $this->status,
