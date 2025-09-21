@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\DamageProductRequest;
 use App\Http\Resources\Admin\DamageProductResource;
+use App\Http\Resources\Admin\ShowAllDamageProductResource;
 use App\Models\DamageProduct;
 use App\Traits\ManagesModelsTrait;
 use Illuminate\Http\Request;
@@ -32,7 +33,7 @@ class DamageProductController extends Controller
         ->paginate(10);
 
                   return response()->json([
-                      'data' =>  DamageProductResource::collection($DamageProduct),
+                      'data' =>  ShowAllDamageProductResource::collection($DamageProduct),
                       'pagination' => [
                         'total' => $DamageProduct->total(),
                         'count' => $DamageProduct->count(),
