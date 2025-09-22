@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('product_id')->constrained('products')->cascadeOnDelete();
             $table->foreignId('product_variant_id')->nullable()->constrained('product_variants')->cascadeOnDelete();
-            $table->foreignId('shipment_id')->constrained('shipments')->cascadeOnDelete();
+            $table->foreignId('shipment_product_id')->constrained()->nullOnDelete();
             $table->integer('quantity');
             $table->text('reason')->nullable();
             $table->enum('status', ['damage','return','repaired'])->default('damage');

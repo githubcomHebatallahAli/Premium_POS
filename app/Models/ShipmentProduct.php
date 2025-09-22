@@ -26,6 +26,11 @@ class ShipmentProduct extends Model
         return $this->belongsTo(Shipment::class);
     }
 
+         public function damages()
+     {
+         return $this->hasMany(DamageProduct::class);
+     }
+
     public function product()
     {
         return $this->belongsTo(Product::class);

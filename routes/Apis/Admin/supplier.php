@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\SupplierController;
 Route::controller(SupplierController::class)->prefix('/admin')->middleware('admin')->group(
     function () {
    Route::get('/showAll/supplier','showAll');
+   Route::get('/showAll/WithoutPaginate/supplier','showAllWithoutPaginate');
    Route::post('/create/supplier', 'create');
    Route::get('/edit/supplier/{id}','edit');
    Route::post('/update/supplier/{id}', 'update');

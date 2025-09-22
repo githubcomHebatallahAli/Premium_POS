@@ -12,7 +12,7 @@ class DamageProduct extends Model
     protected $fillable = [
         'product_id',
         'product_variant_id',
-        'shipment_id',
+        'shipment_product_id',
         'quantity',
         'reason',
         'status',
@@ -28,8 +28,8 @@ class DamageProduct extends Model
     {
         return $this->belongsTo(ProductVariant::class, 'product_variant_id');
     }
-    public function shipment()
+    public function shipmentProduct ()
     {
-        return $this->belongsTo(Shipment::class);
+        return $this->belongsTo(ShipmentProduct::class);
     }
 }

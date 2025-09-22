@@ -38,6 +38,17 @@ class SupplierController extends Controller
                   ]);
     }
 
+        public function showAllWithoutPaginate(Request $request)
+    {
+        $this->authorize('manage_users');
+
+       $Supplier = Supplier::orderBy('created_at', 'desc')
+        ->get();
+                  return response()->json([
+                      'data' =>  SupplierResource::collection($Supplier),
+                      'message' => "Show All Suppliers Successfully."
+                  ]);
+    }
 
 
     public function create(SupplierRequest $request)

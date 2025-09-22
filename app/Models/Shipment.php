@@ -52,10 +52,7 @@ class Shipment extends Model
     return $this->hasMany(ShipmentProduct::class, 'shipment_id');
 }
 
-     public function damages()
-     {
-         return $this->hasMany(DamageProduct::class);
-     }
+
 
 
     protected static function booted()
