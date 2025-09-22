@@ -9,7 +9,7 @@ Route::controller(DamageProductController::class)->prefix('/admin')->middleware(
     function () {
 
    Route::get('/showAll/damage','showAll');
-   Route::get('/showAll/damage/withoutPaginate','showAllDamage');
+   Route::get('/showAll/damage/withoutPaginate','showAllDamageProduct');
    Route::post('/create/damage', 'create');
    Route::get('/edit/damage/{id}','edit');
    Route::post('/update/damage/{id}', 'update');
