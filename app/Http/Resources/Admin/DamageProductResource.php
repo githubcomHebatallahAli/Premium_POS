@@ -19,7 +19,7 @@ class DamageProductResource extends JsonResource
             'id' => $this->id,
             // 'product_id' => $this->product_id,
             // 'product_variant_id' => $this->product_variant_id,
-            'shipment' => new ShipmentResource($this->whenLoaded('shipment')),
+            'shipmentProduct' => new ShipmentProductResource($this->whenLoaded('shipment')),
             'quantity' => $this->quantity,
             'reason' => $this->reason,
             'status' => $this->status,

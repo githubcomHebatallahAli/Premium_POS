@@ -73,7 +73,7 @@ if ($request->filled('category_id')) {
         $DamageProduct = DamageProduct::create([
             "product_id" => $request->product_id,
             "product_variant_id" => $request->product_variant_id,
-            "shipment_id" => $request->shipment_id,
+            "shipment_product_id" => $request->shipment_product_id,
             "quantity" => $request->quantity,
             "reason" => $request->reason,
             'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
@@ -167,7 +167,7 @@ public function update(DamageProductRequest $request, string $id)
         $DamageProduct->update([
             "product_id" => $request->product_id,
             "product_variant_id" => $request->product_variant_id,
-            "shipment_id" => $request->shipment_id,
+            "shipment_product_id" => $request->shipment_product_id,
             "quantity" => $newQuantity,
             "reason" => $request->reason,
             'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),

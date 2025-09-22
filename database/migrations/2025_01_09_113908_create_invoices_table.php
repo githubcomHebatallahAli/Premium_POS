@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('customerName');
             $table->string('customerPhone');
             $table->foreignId('admin_id')->nullable()->constrained('admins')->nullOnDelete();
+            $table->foreignId('company_id')->nullable()->constrained('companies')->nullOnDelete();
             $table->timestamp('creationDate')->nullable();
             $table->unsignedBigInteger('invoiceProductCount')->default(0);
             $table->decimal('totalInvoicePrice', 15, 2)->default(0);

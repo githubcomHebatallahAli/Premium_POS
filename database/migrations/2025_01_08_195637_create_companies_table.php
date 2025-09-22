@@ -18,6 +18,8 @@ return new class extends Migration
             $table->string('logo')->nullable();
             $table->string('firstPhone');
             $table->string('secondPhone')->nullable();
+            $table->string('commercialNo')->nullable();
+            $table->string('taxNo')->nullable();
             $table->timestamps();
         });
     }

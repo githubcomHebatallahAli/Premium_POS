@@ -28,7 +28,8 @@ class DamageProduct extends Model
     {
         return $this->belongsTo(ProductVariant::class, 'product_variant_id');
     }
-    public function shipmentProduct ()
+    
+    public function shipmentProduct()
     {
         return $this->belongsTo(ShipmentProduct::class);
     }

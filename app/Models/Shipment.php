@@ -53,8 +53,6 @@ class Shipment extends Model
 }
 
 
-
-
     protected static function booted()
     {
         static::created(function ($shipment) {
