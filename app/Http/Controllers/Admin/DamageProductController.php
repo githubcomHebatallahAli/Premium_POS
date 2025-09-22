@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\DamageProductRequest;
 use App\Http\Resources\Admin\DamageProductResource;
 use App\Http\Resources\Admin\ShowAllDamageProductResource;
 use App\Models\DamageProduct;
+use App\Models\ShipmentProduct;
 use App\Traits\ManagesModelsTrait;
 use Illuminate\Http\Request;
 
@@ -54,12 +55,11 @@ if ($request->filled('category_id')) {
     public function showAllDamageProduct()
     {
         // $this->authorize('showAllCat',DamageProduct::class);
-
-        $DamageProduct = DamageProduct::with(['product','variant','shipment', 'product.category', 'product.brand'])->get();
-
-                  return response()->json([
-                      'data' =>  DamageProductResource::collection($DamageProduct),
-                      'message' => "Show All DamageProduct  With Products."
+        $DamageProduct = DamageProduct::with(['product','variant','shipment', 'product.category', 'product.brand'])
+        ->get();
+             return response()->json([
+                'data' =>  DamageProductResource::collection($DamageProduct),
+                'message' => "Show All DamageProduct  With Products."
                   ]);
     }
 
@@ -67,20 +67,44 @@ if ($request->filled('category_id')) {
     public function create(DamageProductRequest $request)
     {
         // $this->authorize('create',DamageProduct::class);
-           $DamageProduct =DamageProduct::create ([
-                "product_id" => $request->product_id,
-                "product_variant_id" => $request->product_variant_id,
-                "shipment_id" => $request->shipment_id,
-                "quantity" => $request->quantity,
-                "reason" => $request->reason,
-                'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
-            ]);
+    return DB::transaction(function () use ($request) {
+        // 1- إنشاء سجل التالف
+        $DamageProduct = DamageProduct::create([
+            "product_id" => $request->product_id,
+            "product_variant_id" => $request->product_variant_id,
+            "shipment_id" => $request->shipment_id,
+            "quantity" => $request->quantity,
+            "reason" => $request->reason,
+            'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
+        ]);
 
-           return response()->json([
-            'data' =>new DamageProductResource($DamageProduct),
+        
+        $shipmentProduct = ShipmentProduct::where('product_id', $request->product_id)
+            ->where('shipment_id', $request->shipment_id)
+            ->when($request->product_variant_id, function ($query) use ($request) {
+                return $query->where('product_variant_id', $request->product_variant_id);
+            })
+            ->lockForUpdate() 
+            ->first();
+
+        if (!$shipmentProduct) {
+            throw new \Exception("ShipmentProduct not found.");
+        }
+
+        if ($shipmentProduct->remainingQuantity < $request->quantity) {
+            throw new \Exception("الكمية المتبقية أقل من الكمية المطلوبة للتالف.");
+        }
+
+        $shipmentProduct->decrement('remainingQuantity', $request->quantity);
+
+        return response()->json([
+            'data' => new DamageProductResource($DamageProduct),
             'message' => "DamageProduct Created Successfully."
         ]);
-        }
+    });
+
+}
+        
 
         public function edit(string $id)
         {

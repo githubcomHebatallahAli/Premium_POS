@@ -32,7 +32,6 @@ class ShowAllDamageProductResource extends JsonResource
             "reason" => $this->reason,
             "status" => $this->status,
             "creationDate" => $this->creationDate,
-          
         ];
     }
 }
