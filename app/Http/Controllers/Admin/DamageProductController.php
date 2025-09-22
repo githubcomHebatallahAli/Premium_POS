@@ -10,6 +10,7 @@ use App\Models\DamageProduct;
 use App\Models\ShipmentProduct;
 use App\Traits\ManagesModelsTrait;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DamageProductController extends Controller
 {
