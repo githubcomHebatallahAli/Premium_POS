@@ -59,7 +59,7 @@ if ($request->filled('category_id')) {
         $DamageProduct = DamageProduct::with(['product','variant','shipment', 'product.category', 'product.brand'])
         ->get();
              return response()->json([
-                'data' =>  DamageProductResource::collection($DamageProduct),
+                'data' => ShowAllDamageProductResource::collection($DamageProduct),
                 'message' => "Show All DamageProduct  With Products."
                   ]);
     }
