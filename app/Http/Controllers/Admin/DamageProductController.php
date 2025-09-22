@@ -79,7 +79,6 @@ if ($request->filled('category_id')) {
             'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
         ]);
 
-        
         $shipmentProduct = ShipmentProduct::where('product_id', $request->product_id)
             ->where('shipment_id', $request->shipment_id)
             ->when($request->product_variant_id, function ($query) use ($request) {
@@ -103,7 +102,6 @@ if ($request->filled('category_id')) {
             'message' => "DamageProduct Created Successfully."
         ]);
     });
-
 }
         
 
@@ -127,32 +125,61 @@ if ($request->filled('category_id')) {
             ]);
         }
 
-        public function update(DamageProductRequest $request, string $id)
-        {
-            $this->authorize('manage_users');
-           $DamageProduct =DamageProduct::findOrFail($id);
+public function update(DamageProductRequest $request, string $id)
+{
+    $this->authorize('manage_users');
 
-           if (!$DamageProduct) {
+    return DB::transaction(function () use ($request, $id) {
+        $DamageProduct = DamageProduct::findOrFail($id);
+
+        if (!$DamageProduct) {
             return response()->json([
                 'message' => "DamageProduct not found."
             ], 404);
         }
-        // $this->authorize('update',$DamageProduct);
-           $DamageProduct->update([
-                "product_id" => $request->product_id,
-                "product_variant_id" => $request->product_variant_id,
-                "shipment_id" => $request->shipment_id,
-                "quantity" => $request->quantity,
-                "reason" => $request->reason,
-                'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
-            ]);
 
-           $DamageProduct->save();
-           return response()->json([
-            'data' =>new DamageProductResource($DamageProduct),
-            'message' => " Update DamageProduct By Id Successfully."
+        $shipmentProduct = ShipmentProduct::where('product_id', $DamageProduct->product_id)
+            ->where('shipment_id', $DamageProduct->shipment_id)
+            ->when($DamageProduct->product_variant_id, function ($query) use ($DamageProduct) {
+                return $query->where('product_variant_id', $DamageProduct->product_variant_id);
+            })
+            ->lockForUpdate()
+            ->first();
+
+        if (!$shipmentProduct) {
+            throw new \Exception("ShipmentProduct not found.");
+        }
+
+        $oldQuantity = $DamageProduct->quantity;
+        $newQuantity = $request->quantity;
+        $quantityDifference = $newQuantity - $oldQuantity;
+
+        if ($quantityDifference > 0) {
+            if ($shipmentProduct->remainingQuantity < $quantityDifference) {
+                throw new \Exception("الكمية المتبقية أقل من الكمية المطلوبة للتعديل.");
+            }
+            $shipmentProduct->decrement('remainingQuantity', $quantityDifference);
+        } elseif ($quantityDifference < 0) {
+            $shipmentProduct->increment('remainingQuantity', abs($quantityDifference));
+        }
+
+      
+        $DamageProduct->update([
+            "product_id" => $request->product_id,
+            "product_variant_id" => $request->product_variant_id,
+            "shipment_id" => $request->shipment_id,
+            "quantity" => $newQuantity,
+            "reason" => $request->reason,
+            'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
         ]);
-    }
+
+        return response()->json([
+            'data' => new DamageProductResource($DamageProduct),
+            'message' => "Update DamageProduct By Id Successfully."
+        ]);
+    });
+}
+
 
     public function destroy(string $id){
 
