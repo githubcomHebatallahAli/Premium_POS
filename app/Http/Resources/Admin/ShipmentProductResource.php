@@ -17,7 +17,11 @@ class ShipmentProductResource extends JsonResource
     {
         return [
             "id" => $this -> id,
+            // 'supplierName' => $this->supplier->supplierName,
+            'supplier' => [
+            'id' => $this->supplier->id,
             'supplierName' => $this->supplier->supplierName,
+            ],
             'importer' => $this -> importer ,
             'admin' => new AdminRegisterResource($this->admin),
             'place' => $this ->supplier->place,
