@@ -56,7 +56,7 @@ class DamageProductController extends Controller
 
 public function showAll(Request $request)
 {
-    $query  = DamageProduct::with(['product','variant','shipment', 'product.category', 'product.brand']);
+    $query  = DamageProduct::with(['product','variant','shipmentProduct', 'product.category', 'product.brand']);
     if ($request->filled('brand_id')) {
         $query->whereHas('product', function ($q) use ($request) {
             $q->where('brand_id', $request->brand_id);
@@ -113,7 +113,7 @@ public function showAll(Request $request)
     public function showAllDamageProduct()
     {
         // $this->authorize('showAllCat',DamageProduct::class);
-        $DamageProduct = DamageProduct::with(['product','variant','shipment', 'product.category', 'product.brand'])
+        $DamageProduct = DamageProduct::with(['product','variant','shipmentProduct', 'product.category', 'product.brand'])
         ->get();
              return response()->json([
                 'data' => ShowAllDamageProductResource::collection($DamageProduct),
