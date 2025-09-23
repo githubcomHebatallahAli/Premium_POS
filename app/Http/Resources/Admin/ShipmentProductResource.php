@@ -23,6 +23,7 @@ class ShipmentProductResource extends JsonResource
             'supplierName' => $this->supplier->supplierName,
             "place" => $this ->supplier->place,
             ],
+            'supplier_test' => $this->supplier,
             'importer' => $this -> importer ,
             'admin' => new AdminRegisterResource($this->admin),
             
