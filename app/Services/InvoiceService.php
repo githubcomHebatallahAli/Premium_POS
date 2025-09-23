@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\ShipmentProduct;
@@ -15,9 +16,8 @@ public function create(array $data): Invoice
         $invoice = Invoice::create([
             'customerName'   => $data['customerName'],
             'customerPhone'  => $data['customerPhone'],
-            // 'admin_id'       => auth()->id(),
-            'admin_id'   => auth('admin')->id(),
-            'company_id' => auth('admin')->user()->company->id,
+            'admin_id'       => auth()->id(),
+            'company_id'     => Company::first()->id, 
             'description'    => $data['description'] ?? null,
             'payment'        => $data['payment'] ?? null,
             'pullType'       => $data['pullType'],
