@@ -38,6 +38,8 @@ class InvoiceRequest extends FormRequest
             'taxType' => 'nullable|in:percentage,pounds',
             'extraAmount' => 'nullable|numeric|min:0',
             'paidAmount' => 'nullable|numeric|min:0',
+            'company_id' => 'nullable|exists:companies,id',
+            'description' => 'nullable|string',
             'products' => 'required|array',
             'products.*.id' => 'required|exists:products,id',
             'products.*.shipment_product_id' => [

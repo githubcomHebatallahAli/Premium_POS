@@ -30,8 +30,15 @@ class Invoice extends Model
         'remainingAmount',
         'discountType',
         'taxType',
-        'returnReason' 
+        'returnReason',
+        'company_id',
+        'description',
     ];
+
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
+    }
 
     public function products()
     {

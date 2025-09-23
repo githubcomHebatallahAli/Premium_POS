@@ -32,6 +32,7 @@ return new class extends Migration
             $table->enum('status', ['completed','return','partialReturn','indebted'])->nullable();
             $table->text('returnReason')->nullable();
             $table->enum('payment', ['visa','cash','wallet','instapay'])->nullable();
+            $table->text('description')->nullable();
             $table->softDeletes();
             $table->timestamps();
         });

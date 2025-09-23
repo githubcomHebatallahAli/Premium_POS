@@ -16,6 +16,8 @@ public function create(array $data): Invoice
             'customerName'   => $data['customerName'],
             'customerPhone'  => $data['customerPhone'],
             'admin_id'       => auth()->id(),
+            'company_id' => auth('admin')->user()->company->id,
+            'description'    => $data['description'] ?? null,
             'payment'        => $data['payment'] ?? null,
             'pullType'       => $data['pullType'],
             'discount'       => $data['discount'] ?? 0,

@@ -24,4 +24,9 @@ class Company extends Model
     {
         return $this->belongsTo(Admin::class);
     }
+
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
+    }
 }

@@ -17,6 +17,7 @@ class InvoiceResource extends JsonResource
     {
         return [
             "id" => $this->id,
+            'company' => new CompanyResource($this->company),
             'customerName' => $this->customerName,
             'customerPhone' => $this->customerPhone,
             'admin' => new AdminRegisterResource($this->admin),
@@ -54,6 +55,8 @@ class InvoiceResource extends JsonResource
                     // 'profit' => $product->pivot->profit
                 ];
             }),
+            'description' => $this->description,
+            
         ];
     }
 }
