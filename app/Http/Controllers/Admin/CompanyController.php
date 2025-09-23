@@ -32,6 +32,8 @@ class CompanyController extends Controller
                 'address' => $request->address,
                 'firstPhone' => $request->firstPhone,
                 'secondPhone' => $request->secondPhone,
+                'commercialNo' => $request->commercialNo,
+                'taxNo' => $request->taxNo,
             ]);
                if ($request->hasFile('logo')) {
                 $logoPath = $request->file('logo')->store(Company::storageFolder);
@@ -80,6 +82,8 @@ class CompanyController extends Controller
             'address' => $request->address,
             'firstPhone' => $request->firstPhone,
             'secondPhone' => $request->secondPhone,
+            'commercialNo' => $request->commercialNo,
+            'taxNo' => $request->taxNo,
             ]);
                  if ($request->hasFile('logo')) {
                 if ($Company->logo) {

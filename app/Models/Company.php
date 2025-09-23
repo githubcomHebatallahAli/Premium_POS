@@ -15,5 +15,7 @@ class Company extends Model
         'logo',
         'firstPhone',
         'secondPhone',
+        'commercialNo',
+        'taxNo',
     ];
 }

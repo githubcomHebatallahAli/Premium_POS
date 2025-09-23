@@ -27,6 +27,8 @@ class CompanyRequest extends FormRequest
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg',
             'firstPhone' => 'required|string',
             'secondPhone' => 'nullable|string',
+            'commercialNo' => 'nullable|string',
+            'taxNo' => 'nullable|string',
         ];
     }
 }
