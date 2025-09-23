@@ -21,10 +21,11 @@ class ShipmentProductResource extends JsonResource
             'supplier' => [
             'id' => $this->supplier->id,
             'supplierName' => $this->supplier->supplierName,
+            "place" => $this ->supplier->place,
             ],
             'importer' => $this -> importer ,
             'admin' => new AdminRegisterResource($this->admin),
-            'place' => $this ->supplier->place,
+            
             "totalPrice" => number_format($this->totalPrice, 2, '.', ''),
             'discount'            => number_format($this->discount ?? 0, 2, '.', ''),
             'extraAmount'         => number_format($this->extraAmount ?? 0, 2, '.', ''),
