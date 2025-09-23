@@ -53,7 +53,6 @@ class CompanyController extends Controller
 
      public function edit()
 {
-    $this->authorize('manage_users');
     $admin = auth('admin')->user(); 
     $company = $admin->company;
 
