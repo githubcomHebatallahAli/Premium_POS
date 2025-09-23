@@ -73,6 +73,13 @@ public function showAll(Request $request)
         $query->where('status', $request->status);
     }
 
+      if ($request->filled('search')) {
+        $search = $request->search;
+        $query->whereHas('product', function ($q) use ($search) {
+            $q->where('name', 'like', "%{$search}%");
+        });
+    }
+
     if ($request->filled('from_date')) {
         $query->whereDate('creationDate', '>=', $request->from_date);
     }
