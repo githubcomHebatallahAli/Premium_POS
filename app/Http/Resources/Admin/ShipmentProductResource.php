@@ -23,10 +23,9 @@ class ShipmentProductResource extends JsonResource
             'supplierName' => $this->supplier->supplierName,
             "place" => $this ->supplier->place,
             ],
-            'supplier_test' => $this->supplier,
+            
             'importer' => $this -> importer ,
             'admin' => new AdminRegisterResource($this->admin),
-            
             "totalPrice" => number_format($this->totalPrice, 2, '.', ''),
             'discount'            => number_format($this->discount ?? 0, 2, '.', ''),
             'extraAmount'         => number_format($this->extraAmount ?? 0, 2, '.', ''),
