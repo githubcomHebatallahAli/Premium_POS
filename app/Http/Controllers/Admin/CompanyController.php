@@ -8,6 +8,7 @@ use App\Http\Resources\Admin\CompanyResource;
 use App\Models\Company;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class CompanyController extends Controller
 {
@@ -53,7 +54,7 @@ class CompanyController extends Controller
 
      public function edit()
 {
-    $admin = auth('admin')->user(); 
+    $admin = JWTAuth::parseToken()->authenticate();
     $company = $admin->company;
 
     if (!$company) {
