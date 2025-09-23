@@ -67,7 +67,7 @@ public function showAll(Request $request)
             $q->where(function($sub) use ($searchTerm) {
                 $sub->where('importer', 'like', "%{$searchTerm}%")
                     ->orWhereHas('supplier', function($supplierQ) use ($searchTerm) {
-                        $supplierQ->where('name', 'like', "%{$searchTerm}%");
+                        $supplierQ->where('supplierName', 'like', "%{$searchTerm}%");
                     });
             });
         })
