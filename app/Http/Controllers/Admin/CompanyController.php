@@ -48,7 +48,7 @@ class CompanyController extends Controller
         }
 
         public function edit(string $id)
-        {
+        { 
             // $this->authorize('manage_users');
         $Company = Company::find($id);
     
