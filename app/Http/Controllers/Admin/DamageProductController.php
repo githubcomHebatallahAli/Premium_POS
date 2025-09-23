@@ -15,43 +15,100 @@ use Illuminate\Support\Facades\DB;
 class DamageProductController extends Controller
 {
     use ManagesModelsTrait;
-        public function showAll(Request $request)
-    {
-        // $this->authorize('showAll',DamageProduct::class);
-        $query  = DamageProduct::with(['product','variant','shipment', 'product.category', 'product.brand']);
-         if ($request->filled('brand_id')) {
-    $query->whereHas('product', function ($q) use ($request) {
-        $q->where('brand_id', $request->brand_id);
-    });
-}
+//         public function showAll(Request $request)
+//     {
+//         // $this->authorize('showAll',DamageProduct::class);
+//         $query  = DamageProduct::with(['product','variant','shipment', 'product.category', 'product.brand']);
+//          if ($request->filled('brand_id')) {
+//     $query->whereHas('product', function ($q) use ($request) {
+//         $q->where('brand_id', $request->brand_id);
+//     });
+// }
 
-if ($request->filled('category_id')) {
-    $query->whereHas('product', function ($q) use ($request) {
-        $q->where('category_id', $request->category_id);
-    });
-}
+// if ($request->filled('category_id')) {
+//     $query->whereHas('product', function ($q) use ($request) {
+//         $q->where('category_id', $request->category_id);
+//     });
+// }
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
+//         if ($request->filled('status')) {
+//             $query->where('status', $request->status);
+//         }
         
-        $DamageProduct = $query->orderBy('created_at', 'desc')
-        ->paginate(10);
+//         $DamageProduct = $query->orderBy('created_at', 'desc')
+//         ->paginate(10);
 
-                  return response()->json([
-                      'data' =>  ShowAllDamageProductResource::collection($DamageProduct),
-                      'pagination' => [
-                        'total' => $DamageProduct->total(),
-                        'count' => $DamageProduct->count(),
-                        'per_page' => $DamageProduct->perPage(),
-                        'current_page' => $DamageProduct->currentPage(),
-                        'total_pages' => $DamageProduct->lastPage(),
-                        'next_page_url' => $DamageProduct->nextPageUrl(),
-                        'prev_page_url' => $DamageProduct->previousPageUrl(),
-                    ],
-                      'message' => "Show All DamageProduct  With Products."
-                  ]);
+//                   return response()->json([
+//                       'data' =>  ShowAllDamageProductResource::collection($DamageProduct),
+//                       'pagination' => [
+//                         'total' => $DamageProduct->total(),
+//                         'count' => $DamageProduct->count(),
+//                         'per_page' => $DamageProduct->perPage(),
+//                         'current_page' => $DamageProduct->currentPage(),
+//                         'total_pages' => $DamageProduct->lastPage(),
+//                         'next_page_url' => $DamageProduct->nextPageUrl(),
+//                         'prev_page_url' => $DamageProduct->previousPageUrl(),
+//                     ],
+//                       'message' => "Show All DamageProduct  With Products."
+//                   ]);
+//     }
+
+
+public function showAll(Request $request)
+{
+    $query  = DamageProduct::with(['product','variant','shipment', 'product.category', 'product.brand']);
+    if ($request->filled('brand_id')) {
+        $query->whereHas('product', function ($q) use ($request) {
+            $q->where('brand_id', $request->brand_id);
+        });
     }
+
+    if ($request->filled('category_id')) {
+        $query->whereHas('product', function ($q) use ($request) {
+            $q->where('category_id', $request->category_id);
+        });
+    }
+
+    if ($request->filled('status')) {
+        $query->where('status', $request->status);
+    }
+
+    if ($request->filled('from_date')) {
+        $query->whereDate('creationDate', '>=', $request->from_date);
+    }
+
+    if ($request->filled('to_date')) {
+        $query->whereDate('creationDate', '<=', $request->to_date);
+    }
+
+    $DamageProduct = $query->orderBy('created_at', 'desc')->paginate(10);
+
+    $damageCount = (clone $query)->where('status', 'damage')->sum('quantity');
+
+    $totalLosses = (clone $query)
+        ->where('status', 'damage')
+        ->join('shipment_products', 'damage_products.shipment_product_id', '=', 'shipment_products.id')
+        ->sum(DB::raw('damage_products.quantity * shipment_products.unitPrice'));
+
+    return response()->json([
+        'data' => ShowAllDamageProductResource::collection($DamageProduct),
+        'pagination' => [
+            'total' => $DamageProduct->total(),
+            'count' => $DamageProduct->count(),
+            'per_page' => $DamageProduct->perPage(),
+            'current_page' => $DamageProduct->currentPage(),
+            'total_pages' => $DamageProduct->lastPage(),
+            'next_page_url' => $DamageProduct->nextPageUrl(),
+            'prev_page_url' => $DamageProduct->previousPageUrl(),
+        ],
+        'statistics' => [
+            'damage_count' => $damageCount,
+            'total_losses' => number_format($totalLosses, 2),
+        ],
+        'message' => "Show All DamageProduct With Products."
+    ]);
+}
+
 
     public function showAllDamageProduct()
     {
@@ -69,7 +126,7 @@ if ($request->filled('category_id')) {
     {
         // $this->authorize('create',DamageProduct::class);
     return DB::transaction(function () use ($request) {
-        // 1- إنشاء سجل التالف
+     
         $DamageProduct = DamageProduct::create([
             "product_id" => $request->product_id,
             "product_variant_id" => $request->product_variant_id,

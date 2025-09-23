@@ -17,7 +17,6 @@ class ShipmentProductResource extends JsonResource
     {
         return [
             "id" => $this -> id,
-            // 'supplierName' => $this->supplier->supplierName,
             'supplier' => [
             'id' => $this->supplier->id,
             'supplierName' => $this->supplier->supplierName,
@@ -44,8 +43,7 @@ class ShipmentProductResource extends JsonResource
                     'id' => $product->id,
                     'name' => $product->name,
                     'product_variant_id' => $product->pivot->product_variant_id,
-                    
-        'sku' => optional($product->variants->firstWhere('id', $product->pivot->product_variant_id))->sku,
+                    'sku' => optional($product->variants->firstWhere('id', $product->pivot->product_variant_id))->sku,
                     'quantity' => $product->pivot->quantity,
                     'remainingQuantity' => $product->pivot->remainingQuantity,
                     'price' => $product->pivot->price,
