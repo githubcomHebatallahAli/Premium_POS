@@ -18,6 +18,7 @@ class Company extends Model
         'commercialNo',
         'taxNo',
         'admin_id',
+        'creationDate',
     ];
     public function admin()
     {
