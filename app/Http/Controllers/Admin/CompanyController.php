@@ -52,15 +52,33 @@ class CompanyController extends Controller
         ]);
         }
 
-     public function edit()
+//      public function edit()
+// {
+//     $admin = JWTAuth::parseToken()->authenticate();
+//     $company = $admin->company;
+
+//     if (!$company) {
+//         return response()->json([
+//             'message' => "Company not found."
+//         ], 404);
+//     }
+
+//     return response()->json([
+//         'data' => new CompanyResource($company),
+//         'message' => "Company Retrieved Successfully."
+//     ]);
+// }
+
+public function edit()
 {
     $admin = JWTAuth::parseToken()->authenticate();
     $company = $admin->company;
 
     if (!$company) {
         return response()->json([
+            'data' => new \stdClass(), // بيرجع object فاضي {}
             'message' => "Company not found."
-        ], 404);
+        ]);
     }
 
     return response()->json([
@@ -68,6 +86,7 @@ class CompanyController extends Controller
         'message' => "Company Retrieved Successfully."
     ]);
 }
+
 
 
         public function update(CompanyRequest $request, string $id)
