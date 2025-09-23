@@ -13,8 +13,8 @@ class CompanyController extends Controller
 {
     public function showAll()
     {
+        $this->authorize('manage_users');
         // $this->authorize('showAllCat',Company::class);
-
         $Company = Company::get();
 
                   return response()->json([
@@ -26,6 +26,7 @@ class CompanyController extends Controller
 
     public function create(CompanyRequest $request)
     {
+        $this->authorize('manage_users');
         // $this->authorize('create',Company::class);
            $Company =Company::create ([
                 "name" => $request->name,
@@ -50,24 +51,24 @@ class CompanyController extends Controller
         ]);
         }
 
-        public function edit(string $id)
-        { 
-            // $this->authorize('manage_users');
-        $Company = Company::find($id);
-    
-            if (!$Company) {
-                return response()->json([
-                    'message' => "Company not found."
-                ], 404);
-            }
+     public function edit()
+{
+    $this->authorize('manage_users');
+    $admin = auth('admin')->user(); 
+    $company = $admin->company;
 
-            // $this->authorize('edit',$Company);
+    if (!$company) {
+        return response()->json([
+            'message' => "Company not found."
+        ], 404);
+    }
 
-            return response()->json([
-                'data' => new CompanyResource($Company),
-                'message' => "Edit Company Successfully."
-            ]);
-        }
+    return response()->json([
+        'data' => new CompanyResource($company),
+        'message' => "Company Retrieved Successfully."
+    ]);
+}
+
 
         public function update(CompanyRequest $request, string $id)
         {

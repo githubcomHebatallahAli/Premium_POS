@@ -10,7 +10,7 @@ Route::controller(CompanyController::class)->prefix('/admin')->middleware('admin
 
     Route::get('/showAll/company','showAll');
    Route::post('/create/company', 'create');
-   Route::get('/edit/company/{id}','edit');
+   Route::get('/edit/company','edit');
    Route::post('/update/company/{id}', 'update');
    Route::delete('/delete/company/{id}', 'destroy');
    });
