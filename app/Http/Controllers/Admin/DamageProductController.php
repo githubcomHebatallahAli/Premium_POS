@@ -199,13 +199,9 @@ public function update(DamageProductRequest $request, string $id)
             ], 404);
         }
 
-        $shipmentProduct = ShipmentProduct::where('product_id', $DamageProduct->product_id)
-            ->where('shipment_id', $DamageProduct->shipment_id)
-            ->when($DamageProduct->product_variant_id, function ($query) use ($DamageProduct) {
-                return $query->where('product_variant_id', $DamageProduct->product_variant_id);
-            })
-            ->lockForUpdate()
-            ->first();
+$shipmentProduct = ShipmentProduct::where('id', $request->shipment_product_id)
+    ->lockForUpdate()
+    ->first();
 
         if (!$shipmentProduct) {
             throw new \Exception("ShipmentProduct not found.");
