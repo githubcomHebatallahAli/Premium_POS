@@ -227,7 +227,6 @@ $shipmentProduct = ShipmentProduct::where('id', $request->shipment_product_id)
             $shipmentProduct->increment('remainingQuantity', abs($quantityDifference));
         }
 
-      
         $DamageProduct->update([
             "product_id" => $request->product_id,
             "product_variant_id" => $request->product_variant_id,
@@ -243,6 +242,55 @@ $shipmentProduct = ShipmentProduct::where('id', $request->shipment_product_id)
         ]);
     });
 }
+
+public function repaired(Request $request, string $id)
+{
+    $this->authorize('manage_users');
+
+    return DB::transaction(function () use ($request, $id) {
+        $DamageProduct = DamageProduct::findOrFail($id);
+
+        if (!$DamageProduct) {
+            return response()->json([
+                'message' => "DamageProduct not found."
+            ], 404);
+        }
+
+        $repairedQty = $request->input('repaired_quantity', 0);
+
+        if ($repairedQty <= 0) {
+            throw new \Exception("من فضلك أدخل كمية صحيحة للإصلاح.");
+        }
+
+        if ($repairedQty > $DamageProduct->quantity) {
+            throw new \Exception("الكمية التي تريد إصلاحها أكبر من الكمية التالفة.");
+        }
+
+        $shipmentProduct = ShipmentProduct::where('id', $DamageProduct->shipment_product_id)
+            ->lockForUpdate()
+            ->first();
+
+        if (!$shipmentProduct) {
+            throw new \Exception("ShipmentProduct not found.");
+        }
+
+        $shipmentProduct->increment('remainingQuantity', $repairedQty);
+
+       
+        $newDamageQty = $DamageProduct->quantity - $repairedQty;
+
+        $DamageProduct->update([
+            'quantity' => $newDamageQty,
+            'status'   => $newDamageQty == 0 ? 'repaired' : 'damage', // لو كله اتصلح يبقى الحالة repaired
+        ]);
+
+        return response()->json([
+            'data' => new DamageProductResource($DamageProduct),
+            'message' => "تم إصلاح {$repairedQty} قطعة وإرجاعها للمخزون بنجاح."
+        ]);
+    });
+}
+
 
 
     public function destroy(string $id){
@@ -279,5 +327,7 @@ $shipmentProduct = ShipmentProduct::where('id', $request->shipment_product_id)
 
         return $this->forceDeleteModel(DamageProduct::class, $id);
     }
+
+
     
 }

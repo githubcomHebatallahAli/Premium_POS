@@ -354,16 +354,12 @@ public function delivery(string $id)
         ], 404);
     }
 
-    // استرجاع المنتجات المرتبطة بالفاتورة
     $products = $AgentInvoice->products;
-
-    // زيادة كمية المنتجات في جدول المنتجات
     foreach ($products as $product) {
         $productModel = Product::find($product->id);
         $productModel->increment('quantity', $product->pivot->quantity);
     }
 
-    // تحديث حالة الفاتورة إلى "تم التسليم"
     $AgentInvoice->update(['status' => 'delivery']);
 
     return response()->json([
