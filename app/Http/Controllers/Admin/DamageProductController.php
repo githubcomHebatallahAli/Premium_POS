@@ -136,13 +136,17 @@ public function showAll(Request $request)
             'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
         ]);
 
-        $shipmentProduct = ShipmentProduct::where('product_id', $request->product_id)
-            ->where('shipment_id', $request->shipment_id)
-            ->when($request->product_variant_id, function ($query) use ($request) {
-                return $query->where('product_variant_id', $request->product_variant_id);
-            })
-            ->lockForUpdate() 
-            ->first();
+        // $shipmentProduct = ShipmentProduct::where('product_id', $request->product_id)
+        //     ->where('shipment_id', $request->shipment_id)
+        //     ->when($request->product_variant_id, function ($query) use ($request) {
+        //         return $query->where('product_variant_id', $request->product_variant_id);
+        //     })
+        //     ->lockForUpdate() 
+        //     ->first();
+
+        $shipmentProduct = ShipmentProduct::where('id', $request->shipment_product_id)
+    ->lockForUpdate()
+    ->first();
 
         if (!$shipmentProduct) {
             throw new \Exception("ShipmentProduct not found.");
