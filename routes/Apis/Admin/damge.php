@@ -18,6 +18,6 @@ Route::controller(DamageProductController::class)->prefix('/admin')->middleware(
 Route::get('/restore/damage/{id}','restore');
 Route::delete('/forceDelete/damage/{id}','forceDelete');
 
-Route::patch('/repaired/damage/{id}','repaired');
+Route::put('/repaired/damage/{id}','repaired');
 
    });
