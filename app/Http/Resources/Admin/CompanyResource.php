@@ -21,6 +21,14 @@ class CompanyResource extends JsonResource
             'logo' => $this->logo,
             'firstPhone' => $this->firstPhone,
             'secondPhone' => $this->secondPhone,
+            'commercialNo' => $this->commercialNo,
+            'taxNo' => $this->taxNo,
+            'admin' => $this->admin ? [
+                'id' => $this->admin->id,
+                'name' => $this->admin->name,
+                'email' => $this->admin->email,
+            ] : null,
+            'creationDate' => $this->creationDate,
         ];
     }
 }

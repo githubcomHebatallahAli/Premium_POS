@@ -29,6 +29,8 @@ class CompanyRequest extends FormRequest
             'secondPhone' => 'nullable|string',
             'commercialNo' => 'nullable|string',
             'taxNo' => 'nullable|string',
+            'admin_id' =>'nullable|exists:admins,id',
+
         ];
     }
 }

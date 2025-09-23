@@ -114,10 +114,8 @@ public function create(array $data): Invoice
 public function update(Invoice $invoice, array $data): Invoice
 {
     return DB::transaction(function () use ($invoice, $data) {
-        // امسح المنتجات القديمة
+       
         $invoice->products()->detach();
-
-        // تحديث بيانات الفاتورة الأساسية
         $invoice->update([
             'customerName' => $data['customerName'],
             'customerPhone'=> $data['customerPhone'],
@@ -352,11 +350,11 @@ public function fullReturn(Invoice $invoice): Invoice
     return DB::transaction(function () use ($invoice) {
         $reason = request('returnReason', 'إرجاع كامل');
 
-        // إجمالي الفاتورة قبل الخصم والضريبة
+        
         $total = $invoice->products->sum(fn($p) => $p->pivot->total);
         $profit = $invoice->products->sum(fn($p) => $p->pivot->profit);
 
-        // حساب الخصم والضريبة الكلية
+      
         $discount = $invoice->discount ?? 0;
         $extra    = $invoice->extraAmount ?? 0;
 
@@ -371,10 +369,10 @@ public function fullReturn(Invoice $invoice): Invoice
         foreach ($invoice->products as $product) {
             $pivot = $product->pivot;
 
-            // نسبة مساهمة المنتج
+          
             $share = $pivot->total > 0 && $total > 0 ? $pivot->total / $total : 0;
 
-            // نصيب المنتج من الخصم والضريبة
+          
             $productDiscount = round($discountAmount * $share, 2);
             $productExtra    = round($extraAmount * $share, 2);
 
@@ -389,7 +387,7 @@ public function fullReturn(Invoice $invoice): Invoice
                 'returnReason' => $reason,
             ]);
 
-            // رجّع الكمية للمخزون
+           
             $shipmentProduct = ShipmentProduct::findOrFail($pivot->shipment_product_id);
             $shipmentProduct->increment('remainingQuantity', $pivot->quantity);
 

@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('secondPhone')->nullable();
             $table->string('commercialNo')->nullable();
             $table->string('taxNo')->nullable();
+            $table->timestamp('creationDate')->nullable();
             $table->timestamps();
         });
     }

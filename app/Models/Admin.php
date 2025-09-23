@@ -29,6 +29,11 @@ class Admin extends Authenticatable  implements JWTSubject
         'salary',
     ];
 
+    public function company()
+{
+    return $this->hasOne(Company::class, 'admin_id');
+}
+
     // public function carts()
     // {
     //     return $this->hasMany(Cart::class);

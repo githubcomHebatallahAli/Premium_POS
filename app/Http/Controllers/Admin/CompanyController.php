@@ -34,6 +34,9 @@ class CompanyController extends Controller
                 'secondPhone' => $request->secondPhone,
                 'commercialNo' => $request->commercialNo,
                 'taxNo' => $request->taxNo,
+                'admin_id'=> auth()->id(),
+                'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
+
             ]);
                if ($request->hasFile('logo')) {
                 $logoPath = $request->file('logo')->store(Company::storageFolder);
@@ -84,6 +87,8 @@ class CompanyController extends Controller
             'secondPhone' => $request->secondPhone,
             'commercialNo' => $request->commercialNo,
             'taxNo' => $request->taxNo,
+            'admin_id'=> auth()->id(),
+            'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
             ]);
                  if ($request->hasFile('logo')) {
                 if ($Company->logo) {

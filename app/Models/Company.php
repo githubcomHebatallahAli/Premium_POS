@@ -17,5 +17,10 @@ class Company extends Model
         'secondPhone',
         'commercialNo',
         'taxNo',
+        'admin_id',
     ];
+    public function admin()
+    {
+        return $this->belongsTo(Admin::class);
+    }
 }
