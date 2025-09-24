@@ -295,7 +295,7 @@ public function repaired(Request $request, string $id)
 }
 
 
-public function returnToSupplier(SupplierReturnRequest $request, string $id)
+public function return(SupplierReturnRequest $request, string $id)
 {
     $this->authorize('manage_users');
 
@@ -328,7 +328,7 @@ public function returnToSupplier(SupplierReturnRequest $request, string $id)
             ], 422);
         }
         // ==
-        
+
         if ($refundAmount > ($returnQty * $damageProduct->shipmentProduct->unitPrice)) {
             return response()->json([
                 'message' => "المبلغ المسترد لا يمكن أن يكون أكبر من إجمالي قيمة المنتجات المرجعة."
