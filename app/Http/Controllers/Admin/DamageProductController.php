@@ -300,55 +300,67 @@ public function returnToSupplier(SupplierReturnRequest $request, string $id)
     $this->authorize('manage_users');
 
     return DB::transaction(function () use ($request, $id) {
-        $DamageProduct = DamageProduct::findOrFail($id);
-
-        if (!$DamageProduct) {
+        $damageProduct = DamageProduct::findOrFail($id);
+        if (!$damageProduct) {
             return response()->json([
                 'message' => "DamageProduct not found."
             ], 404);
         }
-
-        $returnQty = $request->input('return_quantity', 0);
-        $refundAmount = $request->input('refund_amount', 0);
-        $note = $request->input('note', null);
+        $returnQty     = $request->input('returned_quantity', 0);
+        $refundAmount  = $request->input('amount_returned', 0);
+        $note          = $request->input('note', null);
 
         if ($returnQty <= 0) {
-            throw new \Exception("من فضلك أدخل كمية صحيحة للإرجاع.");
+            return response()->json([
+                'message' => "من فضلك أدخل كمية صحيحة للإرجاع."
+            ], 422);
         }
 
-        if ($returnQty > $DamageProduct->quantity) {
-            throw new \Exception("الكمية التي تريد إرجاعها أكبر من الكمية التالفة.");
+        if ($returnQty > $damageProduct->quantity) {
+            return response()->json([
+                'message' => "الكمية التي تريد إرجاعها أكبر من الكمية التالفة."
+            ], 422);
         }
 
         if ($refundAmount < 0) {
-            throw new \Exception("المبلغ المسترد لا يمكن أن يكون أقل من صفر.");
+            return response()->json([
+                'message' => "المبلغ المسترد لا يمكن أن يكون أقل من صفر."
+            ], 422);
+        }
+        // ==
+        
+        if ($refundAmount > ($returnQty * $damageProduct->shipmentProduct->unitPrice)) {
+            return response()->json([
+                'message' => "المبلغ المسترد لا يمكن أن يكون أكبر من إجمالي قيمة المنتجات المرجعة."
+            ], 422);
         }
 
-        
-        $newDamageQty = $DamageProduct->quantity - $returnQty;
-        $DamageProduct->update([
+        $newDamageQty = $damageProduct->quantity - $returnQty;
+        $damageProduct->update([
             'quantity' => $newDamageQty,
             'status'   => $newDamageQty == 0 ? 'return' : 'damage',
         ]);
 
-       
+
+        
         $supplierReturn = SupplierReturn::create([
-            'damage_product_id' => $DamageProduct->id,
+            'damage_product_id' => $damageProduct->id,
             'returned_quantity' => $returnQty,
-            'refund_amount'     => $refundAmount,
+            'amount_returned'   => $refundAmount,
             'note'              => $note,
-            'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
+            'returned_at'       => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
         ]);
 
         return response()->json([
             'data' => [
-                'damage_product' => new DamageProductResource($DamageProduct),
-                'supplier_return' => new SupplierReturnResource($supplierReturn),
+                'damage_product'   => new DamageProductResource($damageProduct),
+                'supplier_return'  => new SupplierReturnResource($supplierReturn),
             ],
             'message' => "تم إرجاع {$returnQty} قطعة للمورد، والمبلغ المسترد هو {$refundAmount}."
         ]);
     });
 }
+
 
 
 

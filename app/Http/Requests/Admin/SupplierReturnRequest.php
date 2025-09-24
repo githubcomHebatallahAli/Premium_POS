@@ -20,7 +20,6 @@ class SupplierReturnRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'damage_product_id' => 'required|exists:damage_products,id',
             'returned_quantity' => 'required|integer|min:1',
             'refund_amount' => 'required|numeric|min:0',
             'note' => 'nullable|string',
