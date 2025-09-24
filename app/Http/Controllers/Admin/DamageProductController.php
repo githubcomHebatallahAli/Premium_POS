@@ -143,6 +143,7 @@ public function showAll(Request $request)
             "shipment_product_id" => $request->shipment_product_id,
             "quantity" => $request->quantity,
             "reason" => $request->reason,
+            'status' => 'damage',
             'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
         ]);
 
@@ -236,6 +237,7 @@ $shipmentProduct = ShipmentProduct::where('id', $request->shipment_product_id)
             "shipment_product_id" => $request->shipment_product_id,
             "quantity" => $newQuantity,
             "reason" => $request->reason,
+            'status' => $request->status,
             'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
         ]);
 
