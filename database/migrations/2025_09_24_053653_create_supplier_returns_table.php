@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('damage_product_id')->constrained('damage_products')->cascadeOnDelete();
             $table->integer('returned_quantity');
-            $table->decimal('refund_amount', 15, 2)->default(0); // المبلغ اللي المورد رجعه فعلاً
+            $table->decimal('refund_amount', 15, 2)->default(0); 
+            $table->decimal('loss_amount', 15, 2)->default(0);  
             $table->timestamp('creationDate')->nullable();
             $table->text('note')->nullable();
             $table->timestamps();

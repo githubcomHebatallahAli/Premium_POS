@@ -12,6 +12,7 @@ class SupplierReturn extends Model
         'refund_amount',
         'creationDate',
         'note',
+        'loss_amount'
     ];
 
     public function damageProduct()
