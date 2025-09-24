@@ -18,48 +18,78 @@ use Illuminate\Support\Facades\DB;
 class DamageProductController extends Controller
 {
     use ManagesModelsTrait;
-//         public function showAll(Request $request)
-//     {
-//         // $this->authorize('showAll',DamageProduct::class);
-//         $query  = DamageProduct::with(['product','variant','shipment', 'product.category', 'product.brand']);
-//          if ($request->filled('brand_id')) {
-//     $query->whereHas('product', function ($q) use ($request) {
-//         $q->where('brand_id', $request->brand_id);
-//     });
-// }
-
-// if ($request->filled('category_id')) {
-//     $query->whereHas('product', function ($q) use ($request) {
-//         $q->where('category_id', $request->category_id);
-//     });
-// }
-
-//         if ($request->filled('status')) {
-//             $query->where('status', $request->status);
-//         }
-        
-//         $DamageProduct = $query->orderBy('created_at', 'desc')
-//         ->paginate(10);
-
-//                   return response()->json([
-//                       'data' =>  ShowAllDamageProductResource::collection($DamageProduct),
-//                       'pagination' => [
-//                         'total' => $DamageProduct->total(),
-//                         'count' => $DamageProduct->count(),
-//                         'per_page' => $DamageProduct->perPage(),
-//                         'current_page' => $DamageProduct->currentPage(),
-//                         'total_pages' => $DamageProduct->lastPage(),
-//                         'next_page_url' => $DamageProduct->nextPageUrl(),
-//                         'prev_page_url' => $DamageProduct->previousPageUrl(),
-//                     ],
-//                       'message' => "Show All DamageProduct  With Products."
-//                   ]);
+// public function showAll(Request $request)
+// {
+//     $query  = DamageProduct::with(['product','variant','shipmentProduct', 'product.category', 'product.brand']);
+//     if ($request->filled('brand_id')) {
+//         $query->whereHas('product', function ($q) use ($request) {
+//             $q->where('brand_id', $request->brand_id);
+//         });
 //     }
 
+//     if ($request->filled('category_id')) {
+//         $query->whereHas('product', function ($q) use ($request) {
+//             $q->where('category_id', $request->category_id);
+//         });
+//     }
+
+//     if ($request->filled('status')) {
+//         $query->where('status', $request->status);
+//     }
+
+//       if ($request->filled('search')) {
+//         $search = $request->search;
+//         $query->whereHas('product', function ($q) use ($search) {
+//             $q->where('name', 'like', "%{$search}%");
+//         });
+//     }
+
+//     if ($request->filled('from_date')) {
+//         $query->whereDate('creationDate', '>=', $request->from_date);
+//     }
+
+//     if ($request->filled('to_date')) {
+//         $query->whereDate('creationDate', '<=', $request->to_date);
+//     }
+
+//     $DamageProduct = $query->orderBy('damage_products.created_at', 'desc')->paginate(10);
+
+//     $damageCount = (clone $query)->where('status', 'damage')->sum('quantity');
+
+//     $totalLosses = (clone $query)
+//         ->where('status', 'damage')
+//         ->join('shipment_products', 'damage_products.shipment_product_id', '=', 'shipment_products.id')
+//         ->sum(DB::raw('damage_products.quantity * shipment_products.unitPrice'));
+
+//     return response()->json([
+//         'data' => ShowAllDamageProductResource::collection($DamageProduct),
+//         'pagination' => [
+//             'total' => $DamageProduct->total(),
+//             'count' => $DamageProduct->count(),
+//             'per_page' => $DamageProduct->perPage(),
+//             'current_page' => $DamageProduct->currentPage(),
+//             'total_pages' => $DamageProduct->lastPage(),
+//             'next_page_url' => $DamageProduct->nextPageUrl(),
+//             'prev_page_url' => $DamageProduct->previousPageUrl(),
+//         ],
+//         'statistics' => [
+//             'damage_count' => $damageCount,
+//             'total_losses' => number_format($totalLosses, 2),
+//         ],
+//         'message' => "Show All DamageProduct With Products."
+//     ]);
+// }
 
 public function showAll(Request $request)
 {
-    $query  = DamageProduct::with(['product','variant','shipmentProduct', 'product.category', 'product.brand']);
+    $query  = DamageProduct::with([
+        'product',
+        'variant',
+        'shipmentProduct',
+        'product.category',
+        'product.brand'
+    ]);
+
     if ($request->filled('brand_id')) {
         $query->whereHas('product', function ($q) use ($request) {
             $q->where('brand_id', $request->brand_id);
@@ -76,7 +106,7 @@ public function showAll(Request $request)
         $query->where('status', $request->status);
     }
 
-      if ($request->filled('search')) {
+    if ($request->filled('search')) {
         $search = $request->search;
         $query->whereHas('product', function ($q) use ($search) {
             $q->where('name', 'like', "%{$search}%");
@@ -95,10 +125,20 @@ public function showAll(Request $request)
 
     $damageCount = (clone $query)->where('status', 'damage')->sum('quantity');
 
-    $totalLosses = (clone $query)
+    // خسائر المنتجات التالفة
+    $totalDamageLosses = (clone $query)
         ->where('status', 'damage')
         ->join('shipment_products', 'damage_products.shipment_product_id', '=', 'shipment_products.id')
         ->sum(DB::raw('damage_products.quantity * shipment_products.unitPrice'));
+
+    // خسائر المورد (فرق السعر المسترد)
+    $supplierLosses = (clone $query)
+        ->where('status', 'return')
+        ->join('shipment_products', 'damage_products.shipment_product_id', '=', 'shipment_products.id')
+        ->join('supplier_returns', 'damage_products.id', '=', 'supplier_returns.damage_product_id')
+        ->sum(DB::raw('(supplier_returns.returned_quantity * shipment_products.unitPrice) - supplier_returns.refund_amount'));
+
+    $totalLosses = $totalDamageLosses + $supplierLosses;
 
     return response()->json([
         'data' => ShowAllDamageProductResource::collection($DamageProduct),
@@ -112,12 +152,15 @@ public function showAll(Request $request)
             'prev_page_url' => $DamageProduct->previousPageUrl(),
         ],
         'statistics' => [
-            'damage_count' => $damageCount,
-            'total_losses' => number_format($totalLosses, 2),
+            'damage_count'    => $damageCount,
+            'damage_losses'   => number_format($totalDamageLosses, 2),
+            'supplier_losses' => number_format($supplierLosses, 2),
+            'total_losses'    => number_format($totalLosses, 2),
         ],
         'message' => "Show All DamageProduct With Products."
     ]);
 }
+
 
 
     public function showAllDamageProduct()
