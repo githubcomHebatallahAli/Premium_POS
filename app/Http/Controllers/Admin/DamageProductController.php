@@ -307,7 +307,7 @@ public function return(SupplierReturnRequest $request, string $id)
             ], 404);
         }
         $returnQty     = $request->input('returned_quantity', 0);
-        $refundAmount  = $request->input('amount_returned', 0);
+        $refundAmount  = $request->input('refund_amount', 0);
         $note          = $request->input('note', null);
 
         if ($returnQty <= 0) {
@@ -346,9 +346,9 @@ public function return(SupplierReturnRequest $request, string $id)
         $supplierReturn = SupplierReturn::create([
             'damage_product_id' => $damageProduct->id,
             'returned_quantity' => $returnQty,
-            'amount_returned'   => $refundAmount,
+            'refund_amount'   => $refundAmount,
             'note'              => $note,
-            'returned_at'       => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
+            'creationDate'      => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
         ]);
 
         return response()->json([
