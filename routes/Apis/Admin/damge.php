@@ -19,5 +19,6 @@ Route::get('/restore/damage/{id}','restore');
 Route::delete('/forceDelete/damage/{id}','forceDelete');
 
 Route::put('/repaired/damage/{id}','repaired');
+Route::put('/return/damage/{id}','return');
 
    });

@@ -19,6 +19,12 @@ class DamageProduct extends Model
         'creationDate',
     ];
 
+    public function supplierReturns()
+{
+    return $this->hasMany(SupplierReturn::class);
+}
+
+
     public function product()
     {
         return $this->belongsTo(Product::class);

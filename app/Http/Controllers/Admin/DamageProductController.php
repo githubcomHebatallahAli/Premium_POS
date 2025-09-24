@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\DamageProductRequest;
+use App\Http\Requests\Admin\SupplierReturnRequest;
 use App\Http\Resources\Admin\DamageProductResource;
 use App\Http\Resources\Admin\ShowAllDamageProductResource;
+use App\Http\Resources\Admin\SupplierReturnResource;
 use App\Models\DamageProduct;
 use App\Models\ShipmentProduct;
+use App\Models\SupplierReturn;
 use App\Traits\ManagesModelsTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -290,6 +293,63 @@ public function repaired(Request $request, string $id)
         ]);
     });
 }
+
+
+public function returnToSupplier(SupplierReturnRequest $request, string $id)
+{
+    $this->authorize('manage_users');
+
+    return DB::transaction(function () use ($request, $id) {
+        $DamageProduct = DamageProduct::findOrFail($id);
+
+        if (!$DamageProduct) {
+            return response()->json([
+                'message' => "DamageProduct not found."
+            ], 404);
+        }
+
+        $returnQty = $request->input('return_quantity', 0);
+        $refundAmount = $request->input('refund_amount', 0);
+        $note = $request->input('note', null);
+
+        if ($returnQty <= 0) {
+            throw new \Exception("من فضلك أدخل كمية صحيحة للإرجاع.");
+        }
+
+        if ($returnQty > $DamageProduct->quantity) {
+            throw new \Exception("الكمية التي تريد إرجاعها أكبر من الكمية التالفة.");
+        }
+
+        if ($refundAmount < 0) {
+            throw new \Exception("المبلغ المسترد لا يمكن أن يكون أقل من صفر.");
+        }
+
+        
+        $newDamageQty = $DamageProduct->quantity - $returnQty;
+        $DamageProduct->update([
+            'quantity' => $newDamageQty,
+            'status'   => $newDamageQty == 0 ? 'return' : 'damage',
+        ]);
+
+       
+        $supplierReturn = SupplierReturn::create([
+            'damage_product_id' => $DamageProduct->id,
+            'returned_quantity' => $returnQty,
+            'refund_amount'     => $refundAmount,
+            'note'              => $note,
+            'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
+        ]);
+
+        return response()->json([
+            'data' => [
+                'damage_product' => new DamageProductResource($DamageProduct),
+                'supplier_return' => new SupplierReturnResource($supplierReturn),
+            ],
+            'message' => "تم إرجاع {$returnQty} قطعة للمورد، والمبلغ المسترد هو {$refundAmount}."
+        ]);
+    });
+}
+
 
 
 
