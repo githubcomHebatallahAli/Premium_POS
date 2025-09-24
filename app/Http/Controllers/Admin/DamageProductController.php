@@ -100,7 +100,7 @@ public function showAll(Request $request)
     //     ->join('shipment_products', 'damage_products.shipment_product_id', '=', 'shipment_products.id')
     //     ->sum(DB::raw('damage_products.quantity * shipment_products.unitPrice'));
 
-    $totalLosses = (clone $query)
+  $totalLosses = (clone $query)
     ->where('status', 'damage')
     ->join('shipment_products', 'damage_products.shipment_product_id', '=', 'shipment_products.id')
     ->leftJoin('supplier_returns', 'damage_products.id', '=', 'supplier_returns.damage_product_id')
@@ -109,6 +109,7 @@ public function showAll(Request $request)
         - COALESCE(SUM(supplier_returns.refund_amount), 0) as total_loss
     ')
     ->value('total_loss');
+
 
 
     return response()->json([
