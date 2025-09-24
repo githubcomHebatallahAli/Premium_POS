@@ -179,7 +179,7 @@ public function showAll(Request $request)
         public function edit(string $id)
         {
             // $this->authorize('manage_users');
-        $DamageProduct = DamageProduct::with(['product', 'variant', 'shipment', 'product.category', 'product.brand'])
+        $DamageProduct = DamageProduct::with(['product', 'variant', 'shipmentProduct', 'product.category', 'product.brand'])
         ->find($id);
 
             if (!$DamageProduct) {
