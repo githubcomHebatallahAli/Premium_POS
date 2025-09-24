@@ -100,10 +100,6 @@ public function showAll(Request $request)
         ->join('shipment_products', 'damage_products.shipment_product_id', '=', 'shipment_products.id')
         ->sum(DB::raw('damage_products.quantity * shipment_products.unitPrice'));
 
-
-
-
-
     return response()->json([
         'data' => ShowAllDamageProductResource::collection($DamageProduct),
         'pagination' => [
@@ -305,11 +301,7 @@ public function return(SupplierReturnRequest $request, string $id)
 
     return DB::transaction(function () use ($request, $id) {
         $damageProduct = DamageProduct::findOrFail($id);
-        if (!$damageProduct) {
-            return response()->json([
-                'message' => "DamageProduct not found."
-            ], 404);
-        }
+
         $returnQty     = $request->input('returned_quantity', 0);
         $refundAmount  = $request->input('refund_amount', 0);
         $note          = $request->input('note', null);
@@ -331,7 +323,6 @@ public function return(SupplierReturnRequest $request, string $id)
                 'message' => "المبلغ المسترد لا يمكن أن يكون أقل من صفر."
             ], 422);
         }
-        // ==
 
         if ($refundAmount > ($returnQty * $damageProduct->shipmentProduct->unitPrice)) {
             return response()->json([
@@ -345,12 +336,14 @@ public function return(SupplierReturnRequest $request, string $id)
             'status'   => $newDamageQty == 0 ? 'return' : 'damage',
         ]);
 
+        $expectedRefund = $returnQty * $damageProduct->shipmentProduct->unitPrice;
+        $lossAmount     = $expectedRefund - $refundAmount;
 
-        
         $supplierReturn = SupplierReturn::create([
             'damage_product_id' => $damageProduct->id,
             'returned_quantity' => $returnQty,
-            'refund_amount'   => $refundAmount,
+            'refund_amount'     => $refundAmount,
+            'loss_amount'       => $lossAmount,
             'note'              => $note,
             'creationDate'      => now()->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
         ]);
@@ -360,10 +353,11 @@ public function return(SupplierReturnRequest $request, string $id)
                 'damage_product'   => new DamageProductResource($damageProduct),
                 'supplier_return'  => new SupplierReturnResource($supplierReturn),
             ],
-            'message' => "تم إرجاع {$returnQty} قطعة للمورد، والمبلغ المسترد هو {$refundAmount}."
+            'message' => "تم إرجاع {$returnQty} قطعة للمورد، المبلغ المسترد {$refundAmount}، والخسارة المسجلة {$lossAmount}."
         ]);
     });
 }
+
 
 
 
