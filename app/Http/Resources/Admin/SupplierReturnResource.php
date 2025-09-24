@@ -15,6 +15,7 @@ class SupplierReturnResource extends JsonResource
             'damage_product' => new DamageProductResource($this->whenLoaded('damageProduct')),
             'returned_quantity' => $this->returned_quantity,
             'refund_amount' => number_format($this->refund_amount, 2, '.', ''),
+            "loss_amount" => number_format($this->loss_amount, 2, '.', ''),
             'note' => $this->note,
             'creationDate' => $this->creationDate,
         ];
