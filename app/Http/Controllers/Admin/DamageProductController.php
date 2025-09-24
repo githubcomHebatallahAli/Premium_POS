@@ -91,7 +91,7 @@ public function showAll(Request $request)
         $query->whereDate('creationDate', '<=', $request->to_date);
     }
 
-    $DamageProduct = $query->orderBy('created_at', 'desc')->paginate(10);
+    $DamageProduct = $query->orderBy('damage_products.created_at', 'desc')->paginate(10);
 
     $damageCount = (clone $query)->where('status', 'damage')->sum('quantity');
 
