@@ -51,6 +51,7 @@ class InvoiceResource extends JsonResource
                     'shipment_product_id' => $product->pivot->shipment_product_id,
                     'product_variant_id' => $product->pivot->product_variant_id,
                     'returnReason' => $product->pivot->returnReason,
+                    'sku' => optional($product->variants->firstWhere('id', $product->pivot->product_variant_id))->sku,
                     // 'profit' => $product->pivot->profit
                 ];
             }),
