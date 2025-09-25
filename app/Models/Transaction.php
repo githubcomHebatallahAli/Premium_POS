@@ -24,4 +24,8 @@ class Transaction extends Model
     {
         return $this->belongsTo(Purpose::class);
     }
+        public function admin()
+        {
+            return $this->belongsTo(Admin::class);
+        }
 }
