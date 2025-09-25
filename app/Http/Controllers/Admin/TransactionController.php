@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\TransactionRequest;
+use App\Http\Resources\Admin\ShowAllTransactionResource;
 use App\Http\Resources\Admin\TransactionResource;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
@@ -13,13 +14,29 @@ class TransactionController extends Controller
             public function showAll(Request $request)
     {
         // $this->authorize('showAll',Transaction::class);
-       
+        $query = Transaction::with(['admin', 'purpose']);
 
-        $Transaction = Transaction::orderBy('created_at', 'desc')
+            if ($request->filled('purpose_id')) {
+            $query->where('purpose_id', $request->purpose_id);
+        }
+
+          if ($request->filled('type')) {
+            $query->where('type', $request->type);
+    }
+
+        if ($request->filled('from_date')) {
+        $query->whereDate('creationDate', '>=', $request->from_date);
+    }
+
+    if ($request->filled('to_date')) {
+        $query->whereDate('creationDate', '<=', $request->to_date);
+    }
+
+        $Transaction = $query->orderBy('created_at', 'desc')
         ->paginate(10);
 
                   return response()->json([
-                      'data' =>  TransactionResource::collection($Transaction),
+                      'data' =>ShowAllTransactionResource::collection($Transaction),
                       'pagination' => [
                         'total' => $Transaction->total(),
                         'count' => $Transaction->count(),
@@ -40,7 +57,7 @@ class TransactionController extends Controller
         $Transaction = Transaction::get();
 
                   return response()->json([
-                      'data' =>  TransactionResource::collection($Transaction),
+                      'data' => ShowAllTransactionResource::collection($Transaction),
                       'message' => "Show All Transaction."
                   ]);
     }
