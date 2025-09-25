@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PurposeRequest;
 use App\Http\Resources\Admin\PurposeResource;
 use App\Models\Purpose;
+use App\Traits\ManagesModelsTrait;
 use Illuminate\Http\Request;
 
 class PurposeController extends Controller
 {
+    use ManagesModelsTrait;
         public function showAll(Request $request)
     {
         // $this->authorize('showAll',Purpose::class);
