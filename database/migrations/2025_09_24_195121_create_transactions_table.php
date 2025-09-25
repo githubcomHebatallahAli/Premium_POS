@@ -18,7 +18,7 @@ return new class extends Migration
             $table->enum('type', ['deposit', 'withdraw']);
             $table->decimal('amount', 15, 2);
             $table->decimal('remainingAmount', 15, 2)->nullable();
-            $table->text('description');
+            $table->text('description')->nullable();
             $table->timestamp('creationDate')->nullable();
             $table->softDeletes();
             $table->timestamps();
