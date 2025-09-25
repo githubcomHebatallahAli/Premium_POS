@@ -118,42 +118,47 @@ public function create(array $data): Shipment
 public function calculateTotals(Shipment $shipment, float $total): void
 {
     $discount = $shipment->discount ?? 0;
-    $extra = $shipment->extraAmount ?? 0;
+    $extra    = $shipment->extraAmount ?? 0;
 
-    if ($shipment->discountType === 'percentage' && $discount > 0) {
-        $discountAmount = ($total * $discount) / 100;
-    } else {
-        $discountAmount = $discount;
-    }
-
-   
+    // حساب الضريبة / الإضافة
     if ($shipment->taxType === 'percentage' && $extra > 0) {
         $extraAmount = ($total * $extra) / 100;
     } else {
         $extraAmount = $extra;
     }
 
-   
-    $final = $total - $discountAmount + $extraAmount;
-    
-    $remaining = $final - ($shipment->paidAmount ?? 0);
+    // السعر بعد إضافة الضريبة
+    $afterTax = $total + $extraAmount;
 
-    
-    if ($remaining <= 0) {
-        $status = 'completed';
+    // حساب الخصم
+    if ($shipment->discountType === 'percentage' && $discount > 0) {
+        $discountAmount = ($afterTax * $discount) / 100;
     } else {
-        $status = 'indebted';
+        $discountAmount = $discount;
     }
 
+    // السعر النهائي
+    $final = $afterTax - $discountAmount;
+
+    // المتبقي بعد الدفع
+    $remaining = $final - ($shipment->paidAmount ?? 0);
+
+    // حالة الشحنة
+    $status = $remaining <= 0 ? 'completed' : 'indebted';
+
+    // التحديث
     $shipment->update([
-        'totalPrice' => $total,
-        'invoiceAfterDiscount' => $final,
-        'remainingAmount' => $remaining > 0 ? $remaining : 0,
-        'status' => $status
+        'totalPrice'          => $total,
+        'invoiceAfterDiscount'=> $final,
+        'remainingAmount'     => $remaining > 0 ? $remaining : 0,
+        'status'              => $status,
+        'calculatedDiscount'  => $discountAmount,
+        'calculatedExtra'     => $extraAmount,
     ]);
 
     $shipment->updateShipmentProductsCount();
 }
+
 
 
 
