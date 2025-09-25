@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('admin_id')->nullable()->constrained('admins')->nullOnDelete();
-            $table->foreignId('purpose_id')->constrained('purposes')->nullOnDelete();
+            $table->foreignId('purpose_id')->nullable()->constrained('purposes')->nullOnDelete();
             $table->enum('type', ['deposit', 'withdraw']);
             $table->decimal('amount', 15, 2);
             $table->decimal('remainingAmount', 15, 2)->nullable();
