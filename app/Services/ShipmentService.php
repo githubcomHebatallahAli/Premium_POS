@@ -120,33 +120,27 @@ public function calculateTotals(Shipment $shipment, float $total): void
     $discount = $shipment->discount ?? 0;
     $extra    = $shipment->extraAmount ?? 0;
 
-    // حساب الضريبة / الإضافة
     if ($shipment->taxType === 'percentage' && $extra > 0) {
         $extraAmount = ($total * $extra) / 100;
     } else {
         $extraAmount = $extra;
     }
 
-    // السعر بعد إضافة الضريبة
+    
     $afterTax = $total + $extraAmount;
 
-    // حساب الخصم
     if ($shipment->discountType === 'percentage' && $discount > 0) {
         $discountAmount = ($afterTax * $discount) / 100;
     } else {
         $discountAmount = $discount;
     }
 
-    // السعر النهائي
     $final = $afterTax - $discountAmount;
 
-    // المتبقي بعد الدفع
     $remaining = $final - ($shipment->paidAmount ?? 0);
 
-    // حالة الشحنة
     $status = $remaining <= 0 ? 'completed' : 'indebted';
 
-    // التحديث
     $shipment->update([
         'totalPrice'          => $total,
         'invoiceAfterDiscount'=> $final,
@@ -502,6 +496,55 @@ public function partialReturn(Shipment $shipment, array $products): Shipment
 // }
 
 
+// public function recalculateTotals(Shipment $shipment): void
+// {
+//     $shipment->load('products');
+
+//     $total = $shipment->products->sum(fn($p) => $p->pivot->price);
+
+//     $discount = $shipment->discount ?? 0;
+//     $extra    = $shipment->extraAmount ?? 0;
+
+//     $discountAmount = ($shipment->discountType === 'percentage' && $discount > 0)
+//         ? ($total * $discount) / 100
+//         : $discount;
+
+//     $extraAmount = ($shipment->taxType === 'percentage' && $extra > 0)
+//         ? ($total * $extra) / 100
+//         : $extra;
+
+//     foreach ($shipment->products as $product) {
+//         $pivot = $product->pivot;
+//         if ($total > 0 && $pivot->price > 0) {
+//             $share = $pivot->price / $total;
+
+//             $productDiscount = round($discountAmount * $share, 2);
+//             $productExtra    = round($extraAmount * $share, 2);
+
+//             $finalProductPrice = $pivot->price - $productDiscount + $productExtra;
+//             $shipment->products()->updateExistingPivot($product->id, [
+//                 'price' => $finalProductPrice,
+//             ]);
+//         }
+//     }
+
+   
+//     $final     = $total - $discountAmount + $extraAmount;
+//     $remaining = $final - ($shipment->paidAmount ?? 0);
+
+//     $status = $remaining <= 0 ? 'completed' : 'indebted';
+
+//     $shipment->update([
+//         'totalPrice'          => $total,
+//         'invoiceAfterDiscount'=> $final,
+//         'remainingAmount'     => $remaining > 0 ? $remaining : 0,
+//         'status'              => $status,
+//     ]);
+
+//     $shipment->updateShipmentProductsCount();
+// }
+
+
 public function recalculateTotals(Shipment $shipment): void
 {
     $shipment->load('products');
@@ -511,44 +554,49 @@ public function recalculateTotals(Shipment $shipment): void
     $discount = $shipment->discount ?? 0;
     $extra    = $shipment->extraAmount ?? 0;
 
-    $discountAmount = ($shipment->discountType === 'percentage' && $discount > 0)
-        ? ($total * $discount) / 100
-        : $discount;
-
+    // الضريبة الأول
     $extraAmount = ($shipment->taxType === 'percentage' && $extra > 0)
         ? ($total * $extra) / 100
         : $extra;
+
+    $totalWithTax = $total + $extraAmount;
+
+    // الخصم بعد الضريبة
+    $discountAmount = ($shipment->discountType === 'percentage' && $discount > 0)
+        ? ($totalWithTax * $discount) / 100
+        : $discount;
 
     foreach ($shipment->products as $product) {
         $pivot = $product->pivot;
         if ($total > 0 && $pivot->price > 0) {
             $share = $pivot->price / $total;
 
-            $productDiscount = round($discountAmount * $share, 2);
             $productExtra    = round($extraAmount * $share, 2);
+            $productDiscount = round($discountAmount * $share, 2);
 
-            $finalProductPrice = $pivot->price - $productDiscount + $productExtra;
+            $finalProductPrice = $pivot->price + $productExtra - $productDiscount;
+
             $shipment->products()->updateExistingPivot($product->id, [
                 'price' => $finalProductPrice,
             ]);
         }
     }
 
-   
-    $final     = $total - $discountAmount + $extraAmount;
+    $final     = $totalWithTax - $discountAmount;
     $remaining = $final - ($shipment->paidAmount ?? 0);
 
     $status = $remaining <= 0 ? 'completed' : 'indebted';
 
     $shipment->update([
-        'totalPrice'          => $total,
-        'invoiceAfterDiscount'=> $final,
-        'remainingAmount'     => $remaining > 0 ? $remaining : 0,
-        'status'              => $status,
+        'totalPrice'           => $total,
+        'invoiceAfterDiscount' => $final,
+        'remainingAmount'      => $remaining > 0 ? $remaining : 0,
+        'status'               => $status,
     ]);
 
     $shipment->updateShipmentProductsCount();
 }
+
 
 
 // public function updateShipmentProductCount(Shipment $shipment): void

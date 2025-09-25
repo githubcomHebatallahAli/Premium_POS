@@ -551,19 +551,22 @@ public function calculateTotals(Invoice $invoice, float $total, float $profit): 
     $discount = $invoice->discount ?? 0;
     $extra    = $invoice->extraAmount ?? 0;
 
-    if ($invoice->discountType === 'percentage' && $discount > 0) {
-        $discountAmount = ($total * $discount) / 100;
-    } else {
-        $discountAmount = $discount;
-    }
-
     if ($invoice->taxType === 'percentage' && $extra > 0) {
         $extraAmount = ($total * $extra) / 100;
     } else {
         $extraAmount = $extra;
     }
 
-    $final = $total - $discountAmount + $extraAmount;
+    
+    $afterTax = $total + $extraAmount;
+
+    if ($invoice->discountType === 'percentage' && $discount > 0) {
+        $discountAmount = ($afterTax * $discount) / 100;
+    } else {
+        $discountAmount = $discount;
+    }
+
+    $final = $afterTax - $discountAmount;
 
     $remaining = $final - ($invoice->paidAmount ?? 0);
 
@@ -612,42 +615,94 @@ public function recalculateTotals(Invoice $invoice): void
     $discount = $invoice->discount ?? 0;
     $extra    = $invoice->extraAmount ?? 0;
 
-    $discountAmount = ($invoice->discountType === 'percentage' && $discount > 0)
-        ? ($total * $discount) / 100
-        : $discount;
-
     $extraAmount = ($invoice->taxType === 'percentage' && $extra > 0)
         ? ($total * $extra) / 100
         : $extra;
+
+    $afterTax = $total + $extraAmount;
+
+    $discountAmount = ($invoice->discountType === 'percentage' && $discount > 0)
+        ? ($afterTax * $discount) / 100
+        : $discount;
 
     foreach ($invoice->products as $product) {
         $pivot = $product->pivot;
         if ($total > 0 && $pivot->total > 0) {
             $share = $pivot->total / $total;
 
-            $productDiscount = round($discountAmount * $share, 2);
             $productExtra    = round($extraAmount * $share, 2);
+            $productDiscount = round($discountAmount * $share, 2);
 
-            $finalProductTotal = $pivot->total - $productDiscount + $productExtra;
+            $finalProductTotal = $pivot->total + $productExtra - $productDiscount;
 
         }
     }
 
-    $final     = $total - $discountAmount + $extraAmount;
+    $final     = $afterTax - $discountAmount;
     $remaining = $final - ($invoice->paidAmount ?? 0);
 
     $status = $remaining <= 0 ? 'completed' : 'indebted';
 
     $invoice->update([
-        'totalInvoicePrice'   => $total,
-        'invoiceAfterDiscount'=> $final,
-        'remainingAmount'     => $remaining > 0 ? $remaining : 0,
-        'profit'              => $profit,
-        'status'              => $status,
+        'totalInvoicePrice'    => $total,
+        'invoiceAfterDiscount' => $final,
+        'remainingAmount'      => $remaining > 0 ? $remaining : 0,
+        'profit'               => $profit,
+        'status'               => $status,
+        'calculatedExtra'      => $extraAmount,
+        'calculatedDiscount'   => $discountAmount,
     ]);
 
     $invoice->updateInvoiceProductCount();
 }
+
+
+// public function recalculateTotals(Invoice $invoice): void
+// {
+//     $invoice->load('products');
+
+//     $total  = $invoice->products->sum(fn($p) => $p->pivot->total);
+//     $profit = $invoice->products->sum(fn($p) => $p->pivot->profit);
+
+//     $discount = $invoice->discount ?? 0;
+//     $extra    = $invoice->extraAmount ?? 0;
+
+//     $discountAmount = ($invoice->discountType === 'percentage' && $discount > 0)
+//         ? ($total * $discount) / 100
+//         : $discount;
+
+//     $extraAmount = ($invoice->taxType === 'percentage' && $extra > 0)
+//         ? ($total * $extra) / 100
+//         : $extra;
+
+//     foreach ($invoice->products as $product) {
+//         $pivot = $product->pivot;
+//         if ($total > 0 && $pivot->total > 0) {
+//             $share = $pivot->total / $total;
+
+//             $productDiscount = round($discountAmount * $share, 2);
+//             $productExtra    = round($extraAmount * $share, 2);
+
+//             $finalProductTotal = $pivot->total - $productDiscount + $productExtra;
+
+//         }
+//     }
+
+//     $final     = $total - $discountAmount + $extraAmount;
+//     $remaining = $final - ($invoice->paidAmount ?? 0);
+
+//     $status = $remaining <= 0 ? 'completed' : 'indebted';
+
+//     $invoice->update([
+//         'totalInvoicePrice'   => $total,
+//         'invoiceAfterDiscount'=> $final,
+//         'remainingAmount'     => $remaining > 0 ? $remaining : 0,
+//         'profit'              => $profit,
+//         'status'              => $status,
+//     ]);
+
+//     $invoice->updateInvoiceProductCount();
+// }
 
 }
 
