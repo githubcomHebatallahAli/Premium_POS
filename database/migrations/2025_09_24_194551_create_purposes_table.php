@@ -11,14 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('agentinvoices', function (Blueprint $table) {
+        Schema::create('purposes', function (Blueprint $table) {
             $table->id();
-            $table->string('responsibleName');
-            $table->string('distributorName');
+            $table->string('transactionReason');
             $table->timestamp('creationDate')->nullable();
-            $table->unsignedBigInteger('invoiceProductCount')->default(0);
-            $table->decimal('totalInvoicePrice', 15, 2)->default(0);
-            $table->enum('status', ['delivery', 'distribution'])->default('distribution');
             $table->softDeletes();
             $table->timestamps();
         });
@@ -29,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('agentinvoices');
+        Schema::dropIfExists('purposes');
     }
 };

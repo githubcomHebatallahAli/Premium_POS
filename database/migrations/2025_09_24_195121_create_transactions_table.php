@@ -11,14 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('agentinvoices', function (Blueprint $table) {
+        Schema::create('transactions', function (Blueprint $table) {
             $table->id();
-            $table->string('responsibleName');
-            $table->string('distributorName');
+            $table->foreignId('admin_id')->nullable()->constrained('admins')->nullOnDelete();
+            $table->foreignId('purpose_id')->constrained('purpose')->nullOnDelete();
+            $table->enum('type', ['deposit', 'withdraw']);
+            $table->decimal('amount', 15, 2);
+            $table->decimal('remainingAmount', 15, 2)->nullable();
+            $table->text('description');
             $table->timestamp('creationDate')->nullable();
-            $table->unsignedBigInteger('invoiceProductCount')->default(0);
-            $table->decimal('totalInvoicePrice', 15, 2)->default(0);
-            $table->enum('status', ['delivery', 'distribution'])->default('distribution');
             $table->softDeletes();
             $table->timestamps();
         });
@@ -29,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('agentinvoices');
+        Schema::dropIfExists('transactions');
     }
 };

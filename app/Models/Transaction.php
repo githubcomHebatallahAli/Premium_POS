@@ -2,16 +2,15 @@
 
 namespace App\Models;
 
-use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class Withdraw extends Model
+class Transaction extends Model
 {
     use HasFactory, SoftDeletes;
     protected $fillable = [
-        "admin_id",
+        'admin_id',
         'type',
         'purpose_id',
         'creationDate',
@@ -20,5 +19,9 @@ class Withdraw extends Model
         'description',
     ];
 
-
+    
+      public function purpose()
+    {
+        return $this->belongsTo(Purpose::class);
+    }
 }

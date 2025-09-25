@@ -47,42 +47,6 @@ class WithdrawController extends Controller
     }
 
 
-    // public function create(WithdrawRequest $request)
-    // {
-    //     $this->authorize('manage_users');
-
-    //     $totalSales = Invoice::sum('invoiceAfterDiscount');
-
-    //     $totalWithdrawals = Withdraw::sum('withdrawnAmount');
-
-    //     $availableWithdrawal = $totalSales - $totalWithdrawals;
-
-    //     $amountToWithdraw = $request->withdrawnAmount;
-
-    //     if ($amountToWithdraw > $availableWithdrawal) {
-    //         return response()->json([
-    //             'message' => 'المبلغ المطلوب سحبه يتجاوز المبلغ المتاح.',
-    //             'availableWithdrawal' => $availableWithdrawal,
-    //         ], 400);
-    //     }
-
-    //     $remainingAmountAfterWithdraw = $availableWithdrawal - $amountToWithdraw;
-
-    //     $withdraw = Withdraw::create([
-    //         'personName' => $request->personName,
-    //         'creationDate' => now()->timezone('Africa/Cairo')->format('Y-m-d h:i:s'),
-    //         'withdrawnAmount' => $amountToWithdraw,
-    //         'remainingAmount' => $remainingAmountAfterWithdraw,
-    //         // 'totalSalesCopy' => $totalSales,
-    //         'description' => $request->description,
-    //     ]);
-
-    //     return response()->json([
-    //         'message' => 'تم السحب بنجاح.',
-    //         'data' => new WithdrawResource($withdraw),
-    //         'availableWithdrawal' => $remainingAmountAfterWithdraw,
-    //     ]);
-    // }
 
     public function create(WithdrawRequest $request)
 {
