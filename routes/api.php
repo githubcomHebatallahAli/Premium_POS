@@ -19,4 +19,6 @@ require __DIR__ . '/Apis/Admin/supplier.php';
 require __DIR__ . '/Apis/Admin/company.php';
 require __DIR__ . '/Apis/Admin/image.php';
 require __DIR__ . '/Apis/Admin/damge.php';
+require __DIR__ . '/Apis/Admin/purpose.php';
+require __DIR__ . '/Apis/Admin/transaction.php';
 require __DIR__ . '/Apis/Excel/import&export.php';
