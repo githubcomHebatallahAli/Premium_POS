@@ -11,11 +11,9 @@ class Withdraw extends Model
 {
     use HasFactory, SoftDeletes;
     protected $fillable = [
-        "admin_id",
-        'type',
-        'purpose_id',
+        'personName',
         'creationDate',
-        'amount',
+        'withdrawAmount',
         'remainingAmount',
         'description',
     ];
