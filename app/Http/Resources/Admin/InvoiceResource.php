@@ -46,6 +46,7 @@ class InvoiceResource extends JsonResource
                     'categoryName' => $product->category->name ?? null, 
                     'brandName' => $product->brand->name ?? null, 
                     'sellingPrice' => $product->sellingPrice,
+                    'sku' => $product->sku,
                     'quantity' => $product->pivot->quantity,
                     'total' => $product->pivot->total,
                     'shipment_product_id' => $product->pivot->shipment_product_id,
