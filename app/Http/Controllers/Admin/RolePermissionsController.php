@@ -9,27 +9,52 @@ use Illuminate\Http\Request;
 
 class RolePermissionsController extends Controller
 {
-            public function assignRoleToPermissions(RolePermissionsRequest $request)
-    {
-        $this->authorize('manage_users');
-        $role = Role::find($request->role_id);
-        $rolesPermissions = $role->permissions()->attach($request->permissions_id);
-        return response()->json([
-            "message" => "Permissions assigned to role successfully"
-        ]);
+//             public function assignRoleToPermissions(RolePermissionsRequest $request)
+//     {
+//         $this->authorize('manage_users');
+//         $role = Role::find($request->role_id);
+//         $rolesPermissions = $role->permissions()->attach($request->permissions_id);
+//         return response()->json([
+//             "message" => "Permissions assigned to role successfully"
+//         ]);
 
-    }
+//     }
 
-    public function revokeRoleFromPermissions(RolePermissionsRequest $request)
+//     public function revokeRoleFromPermissions(RolePermissionsRequest $request)
+// {
+//     $this->authorize('manage_users');
+//     $role = Role::find($request->role_id);
+//     $role->permissions()->detach($request->permissions_id);
+
+//     return response()->json([
+//         "message" => "Permissions revoked from role successfully"
+//     ]);
+// }
+
+public function assignRoleToPermissions(RolePermissionsRequest $request, $roleId)
 {
     $this->authorize('manage_users');
-    $role = Role::find($request->role_id);
+
+    $role = Role::findOrFail($roleId);
+    $role->permissions()->attach($request->permissions_id);
+
+    return response()->json([
+        "message" => "Permissions assigned to role successfully"
+    ]);
+}
+
+public function revokeRoleFromPermissions(RolePermissionsRequest $request, $roleId)
+{
+    $this->authorize('manage_users');
+
+    $role = Role::findOrFail($roleId);
     $role->permissions()->detach($request->permissions_id);
 
     return response()->json([
         "message" => "Permissions revoked from role successfully"
     ]);
 }
+
 
 public function showAllRolesWithPermissions(){
     $this->authorize('manage_users');
