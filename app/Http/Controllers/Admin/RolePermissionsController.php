@@ -11,6 +11,7 @@ class RolePermissionsController extends Controller
 {
             public function assignRoleToPermissions(RolePermissionsRequest $request)
     {
+        $this->authorize('manage_users');
         $role = Role::find($request->role_id);
         $rolesPermissions = $role->permissions()->attach($request->permissions_id);
         return response()->json([
@@ -21,6 +22,7 @@ class RolePermissionsController extends Controller
 
     public function revokeRoleFromPermissions(RolePermissionsRequest $request)
 {
+    $this->authorize('manage_users');
     $role = Role::find($request->role_id);
     $role->permissions()->detach($request->permissions_id);
 
@@ -30,6 +32,7 @@ class RolePermissionsController extends Controller
 }
 
 public function showAllRolesWithPermissions(){
+    $this->authorize('manage_users');
 
     $rolesWithPermissions = [];
 
@@ -48,4 +51,20 @@ public function showAllRolesWithPermissions(){
         'message' => "Show All Roles With Permissions Successfully."
     ]);
 }
+
+public function showRoleWithPermissions($id)
+{
+    $this->authorize('manage_users');
+
+    $role = Role::with('permissions')->findOrFail($id);
+
+    return response()->json([
+        'data' => [
+            'role_name'   => $role->name,
+            'permissions' => $role->permissions->pluck('name')->toArray(),
+        ],
+        'message' => "Show Role With Permissions Successfully."
+    ]);
+}
+
 }
