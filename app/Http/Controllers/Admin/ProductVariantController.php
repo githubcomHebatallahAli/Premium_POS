@@ -19,7 +19,7 @@ class ProductVariantController extends Controller
         public function showAll()
     {
         // $this->authorize('showAll',ProductVariant::class);
-         $this->authorize('manage_users');
+        //  $this->authorize('manage_users');
         $ProductVariant = ProductVariant:: orderBy('created_at', 'desc')
         ->paginate(10);
 
@@ -40,7 +40,7 @@ class ProductVariantController extends Controller
         public function showAllproductVariant()
     {
         // $this->authorize('showAll',ProductVariant::class);
-         $this->authorize('manage_users');
+        //  $this->authorize('manage_users');
         $ProductVariant = ProductVariant:: orderBy('created_at', 'desc')
         ->get();
 
@@ -52,7 +52,7 @@ class ProductVariantController extends Controller
 
 public function create(ProductVariantRequest $request)
 {
-    $this->authorize('manage_users');
+    // $this->authorize('manage_users');
 
     $product = Product::findOrFail($request->product_id);
 
@@ -100,7 +100,7 @@ private function generateVariantSku(string $productName, array $variantData): st
 
         public function edit(string $id)
         {
-            $this->authorize('manage_users');
+            // $this->authorize('manage_users');
             $ProductVariant = ProductVariant::with(['product'])->find($id);
 
             if (!$ProductVariant) {
@@ -118,7 +118,7 @@ private function generateVariantSku(string $productName, array $variantData): st
 
 public function update(ProductVariantRequest $request, string $id)
 {
-    $this->authorize('manage_users');
+    // $this->authorize('manage_users');
 
     $variant = ProductVariant::findOrFail($id);
     $product = Product::findOrFail($request->product_id ?? $variant->product_id);
@@ -166,7 +166,7 @@ public function update(ProductVariantRequest $request, string $id)
     }
 
     public function showDeleted(){
-        $this->authorize('manage_users');
+        // $this->authorize('manage_users');
     $ProductVariants=ProductVariant::onlyTrashed()->get();
     return response()->json([
         'data' =>ProductVariantResource::collection($ProductVariants),
@@ -176,7 +176,7 @@ public function update(ProductVariantRequest $request, string $id)
 
     public function restore(string $id)
     {
-       $this->authorize('manage_users');
+    //    $this->authorize('manage_users');
     $ProductVariant = ProductVariant::withTrashed()->where('id', $id)->first();
     if (!$ProductVariant) {
         return response()->json([

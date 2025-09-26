@@ -15,8 +15,6 @@ class PurposeController extends Controller
         public function showAll(Request $request)
     {
         // $this->authorize('showAll',Purpose::class);
-       
-
         $Purpose = Purpose::orderBy('created_at', 'desc')
         ->paginate(10);
 
@@ -73,7 +71,6 @@ class PurposeController extends Controller
             }
 
             // $this->authorize('edit',$Purpose);
-
             return response()->json([
                 'data' => new PurposeResource($Purpose),
                 'message' => "Edit Purpose By ID Successfully."
@@ -82,7 +79,7 @@ class PurposeController extends Controller
 
         public function update(PurposeRequest $request, string $id)
         {
-            $this->authorize('manage_users');
+            // $this->authorize('manage_users');
            $Purpose =Purpose::findOrFail($id);
 
            if (!$Purpose) {
@@ -109,7 +106,7 @@ class PurposeController extends Controller
     }
 
     public function showDeleted(){
-        $this->authorize('manage_users');
+        // $this->authorize('manage_users');
     $Purposes=Purpose::onlyTrashed()->get();
     return response()->json([
         'data' =>PurposeResource::collection($Purposes),
@@ -119,7 +116,7 @@ class PurposeController extends Controller
 
     public function restore(string $id)
     {
-       $this->authorize('manage_users');
+    //    $this->authorize('manage_users');
     $Purpose = Purpose::withTrashed()->where('id', $id)->first();
     if (!$Purpose) {
         return response()->json([

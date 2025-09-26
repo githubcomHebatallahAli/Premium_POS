@@ -51,7 +51,7 @@ class ProductController extends Controller
         public function showAll(Request $request)
     {
         // $this->authorize('showAll',Product::class);
-          $this->authorize('manage_users');
+        //   $this->authorize('manage_users');
       
         $searchTerm = $request->input('search', '');
         $query = Product::with(['category', 'brand', 'variants'])
@@ -98,7 +98,7 @@ class ProductController extends Controller
 
     public function showAllProduct()
     {
-          $this->authorize('manage_users');
+        //   $this->authorize('manage_users');
         // $this->authorize('showAllProduct',Product::class);
 
         $Product = Product::with(['category','brand','variants'])
@@ -113,7 +113,7 @@ class ProductController extends Controller
     public function showProductLessThan5()
 {
     // $this->authorize('showProductLessThan5', Product::class);
-$this->authorize('manage_users');
+// $this->authorize('manage_users');
     $products = Product::with(['category', 'brand'])
                         ->where('quantity', '<=', 5)
                         ->get();
@@ -132,7 +132,7 @@ $this->authorize('manage_users');
 
     public function create(ProductRequest $request)
     {
-        $this->authorize('manage_users');
+        // $this->authorize('manage_users');
         // $this->authorize('create',Product::class);
         $formattedSellingPrice = number_format($request->sellingPrice, 2, '.', '');
       
@@ -165,7 +165,7 @@ $this->authorize('manage_users');
 
         public function edit(string $id)
         {
-            $this->authorize('manage_users');
+            // $this->authorize('manage_users');
             $Product = Product::with(['category','brand','variants'])->find($id);
 
             if (!$Product) {
@@ -184,7 +184,7 @@ $this->authorize('manage_users');
 
 public function update(ProductRequest $request, string $id)
 {
-    $this->authorize('manage_users');
+    // $this->authorize('manage_users');
 
     $formattedSellingPrice = number_format($request->sellingPrice, 2, '.', '');
 
@@ -236,7 +236,7 @@ public function update(ProductRequest $request, string $id)
     }
 
     public function showDeleted(){
-        $this->authorize('manage_users');
+        // $this->authorize('manage_users');
     $Products=Product::onlyTrashed()->get();
     return response()->json([
         'data' =>ProductResource::collection($Products),
@@ -246,7 +246,7 @@ public function update(ProductRequest $request, string $id)
 
     public function restore(string $id)
     {
-       $this->authorize('manage_users');
+    //    $this->authorize('manage_users');
     $Product = Product::withTrashed()->where('id', $id)->first();
     if (!$Product) {
         return response()->json([

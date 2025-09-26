@@ -23,20 +23,20 @@ class StatisticsController extends Controller
     $paidDeptInvoicesCount = Dept::where('status', 'paid')->count();
     $invoicesCount += $paidDeptInvoicesCount;
 
-    // حساب إجمالي المبيعات
+    
     $salesFromInvoices = Invoice::sum('invoiceAfterDiscount');
     $salesFromDepts = Dept::where('status', 'paid')->sum('depetAfterDiscount');
     $totalSales = $salesFromInvoices + $salesFromDepts;
 
-    // حساب صافي الربح
+   
     $profitFromInvoices = Invoice::sum('profit');
     $profitFromDepts = Dept::where('status', 'paid')->sum('profit'); // تأكد من وجود عمود 'profit' في جدول Dept
     $netProfit = $profitFromInvoices + $profitFromDepts;
 
-    // إجمالي المبالغ المسحوبة
+    
     $totalWithdrawals = Withdraw::sum('withdrawnAmount');
 
-    // المبلغ المتاح للسحب
+    
     $availableWithdrawal = $totalSales - $totalWithdrawals;
 
     $statistics = [

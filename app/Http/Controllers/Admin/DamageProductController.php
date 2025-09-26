@@ -242,7 +242,7 @@ public function showAll(Request $request)
 
 public function update(DamageProductRequest $request, string $id)
 {
-    $this->authorize('manage_users');
+    // $this->authorize('manage_users');
 
     return DB::transaction(function () use ($request, $id) {
         $DamageProduct = DamageProduct::findOrFail($id);
@@ -293,7 +293,7 @@ $shipmentProduct = ShipmentProduct::where('id', $request->shipment_product_id)
 
 public function repaired(Request $request, string $id)
 {
-    $this->authorize('manage_users');
+    // $this->authorize('manage_users');
 
     return DB::transaction(function () use ($request, $id) {
         $DamageProduct = DamageProduct::findOrFail($id);
@@ -342,7 +342,7 @@ public function repaired(Request $request, string $id)
 
 public function return(SupplierReturnRequest $request, string $id)
 {
-    $this->authorize('manage_users');
+    // $this->authorize('manage_users');
 
     return DB::transaction(function () use ($request, $id) {
         $damageProduct = DamageProduct::findOrFail($id);
@@ -414,7 +414,7 @@ public function return(SupplierReturnRequest $request, string $id)
     }
 
     public function showDeleted(){
-        $this->authorize('manage_users');
+        // $this->authorize('manage_users');
     $DamageProducts=DamageProduct::onlyTrashed()->get();
     return response()->json([
         'data' =>DamageProductResource::collection($DamageProducts),
@@ -424,7 +424,7 @@ public function return(SupplierReturnRequest $request, string $id)
 
     public function restore(string $id)
     {
-       $this->authorize('manage_users');
+    //    $this->authorize('manage_users');
     $DamageProduct = DamageProduct::withTrashed()->where('id', $id)->first();
     if (!$DamageProduct) {
         return response()->json([

@@ -15,7 +15,7 @@ class SupplierController extends Controller
     use ManagesModelsTrait;
         public function showAll(Request $request)
     {
-        $this->authorize('manage_users');
+        // $this->authorize('manage_users');
         $searchTerm = $request->input('search', '');
 
         $Supplier = Supplier::where('supplierName', 'like', '%' . $searchTerm . '%')
@@ -40,7 +40,7 @@ class SupplierController extends Controller
 
         public function showAllWithoutPaginate(Request $request)
     {
-        $this->authorize('manage_users');
+        // $this->authorize('manage_users');
 
        $Supplier = Supplier::orderBy('created_at', 'desc')
         ->get();
@@ -53,7 +53,7 @@ class SupplierController extends Controller
 
     public function create(SupplierRequest $request)
     {
-         $this->authorize('manage_users');
+        //  $this->authorize('manage_users');
         // $this->authorize('create',Supplier::class);
            $Supplier =Supplier::create ([
                 "supplierName" => $request->supplierName,
@@ -73,7 +73,7 @@ class SupplierController extends Controller
 
     public function edit(string $id)
     {
-        $this->authorize('manage_users');
+        // $this->authorize('manage_users');
         $Supplier = Supplier::find($id);
 
         if (!$Supplier) {
@@ -94,7 +94,7 @@ class SupplierController extends Controller
 
     public function update(SupplierRequest $request, string $id)
     {
-         $this->authorize('manage_users');
+        //  $this->authorize('manage_users');
        $Supplier =Supplier::findOrFail($id);
 
        if (!$Supplier) {

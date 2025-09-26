@@ -184,15 +184,14 @@ public function updatePaidAmount(UpdatePaidAmountRequest $request, $id)
         ], 400);
     }
 
-    // تحديث المبلغ المدفوع
+   
     $invoice->paidAmount += $paidAmount;
     $invoice->save();
 
-    // إعادة حساب الإجمالي والربح من المنتجات
     $total  = $invoice->products->sum(fn($p) => $p->pivot->total);
     $profit = $invoice->products->sum(fn($p) => $p->pivot->profit);
 
-    // إعادة استخدام calculateTotals لتحديث باقي الحقول (final, remaining, status...)
+    
     $this->invoiceService->calculateTotals($invoice, $total, $profit);
 
     return response()->json([
@@ -210,7 +209,7 @@ public function updatePaidAmount(UpdatePaidAmountRequest $request, $id)
 
   public function showDeleted()
   {
-    $this->authorize('manage_users');
+    // $this->authorize('manage_users');
 $Invoices=Invoice::onlyTrashed()->get();
 return response()->json([
     'data' =>InvoiceResource::collection($Invoices),
@@ -221,7 +220,7 @@ return response()->json([
 
 public function restore(string $id)
 {
-   $this->authorize('manage_users');
+//    $this->authorize('manage_users');
 $Invoice = Invoice::withTrashed()->where('id', $id)->first();
 if (!$Invoice) {
     return response()->json([

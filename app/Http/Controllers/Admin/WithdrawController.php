@@ -17,7 +17,7 @@ class WithdrawController extends Controller
     use ManagesModelsTrait;
     public function showAll(Request $request)
     {
-        $this->authorize('manage_users');
+        // $this->authorize('manage_users');
 
         $searchTerm = $request->input('search', '');
 
@@ -50,7 +50,7 @@ class WithdrawController extends Controller
 
     public function create(WithdrawRequest $request)
 {
-    $this->authorize('manage_users');
+    // $this->authorize('manage_users');
 
     $totalSalesFromInvoices = Invoice::sum('invoiceAfterDiscount');
 
@@ -94,7 +94,7 @@ class WithdrawController extends Controller
 
     public function edit(string $id)
     {
-        $this->authorize('manage_users');
+        // $this->authorize('manage_users');
         $Withdraw = Withdraw::find($id);
 
         if (!$Withdraw) {
@@ -112,7 +112,7 @@ class WithdrawController extends Controller
 
     public function update(WithdrawRequest $request, string $id)
     {
-        $this->authorize('manage_users');
+        // $this->authorize('manage_users');
 
         $withdraw = Withdraw::find($id);
 

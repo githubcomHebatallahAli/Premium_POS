@@ -102,7 +102,7 @@ class TransactionController extends Controller
 
         public function update(TransactionRequest $request, string $id)
         {
-            $this->authorize('manage_users');
+            // $this->authorize('manage_users');
            $Transaction =Transaction::findOrFail($id);
 
            if (!$Transaction) {
