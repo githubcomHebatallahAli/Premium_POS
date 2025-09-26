@@ -22,7 +22,7 @@ class RolePermissionsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'role_id' => "required|integer|exists:roles,id",
+            // 'role_id' => "required|integer|exists:roles,id",
             // 'permissions' => 'required|array',
             // 'permissions.*' => 'exists:permissions,id',
             'permissions_id'=> "required|array|exists:permissions,id",
