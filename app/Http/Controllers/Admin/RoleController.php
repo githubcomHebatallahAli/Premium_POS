@@ -115,8 +115,4 @@ return response()->json([
   {
       return $this->forceDeleteModel(Role::class, $id);
   }
-
-
-
-
 }
