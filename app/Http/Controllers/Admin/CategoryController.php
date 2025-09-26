@@ -91,7 +91,7 @@ class CategoryController extends Controller
 
         public function update(MainRequest $request, string $id)
         {
-            $this->authorize('manage_users');
+            // $this->authorize('manage_users');
            $Category =Category::findOrFail($id);
 
            if (!$Category) {
@@ -118,7 +118,7 @@ class CategoryController extends Controller
     }
 
     public function showDeleted(){
-        $this->authorize('manage_users');
+        // $this->authorize('manage_users');
     $Categorys=Category::onlyTrashed()->get();
     return response()->json([
         'data' =>MainResource::collection($Categorys),
@@ -128,7 +128,7 @@ class CategoryController extends Controller
 
     public function restore(string $id)
     {
-       $this->authorize('manage_users');
+    //    $this->authorize('manage_users');
     $Category = Category::withTrashed()->where('id', $id)->first();
     if (!$Category) {
         return response()->json([

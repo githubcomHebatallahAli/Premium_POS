@@ -88,7 +88,7 @@ class BrandController extends Controller
 
         public function update(MainRequest $request, string $id)
         {
-            $this->authorize('manage_users');
+            // $this->authorize('manage_users');
            $Brand =Brand::findOrFail($id);
 
            if (!$Brand) {
@@ -115,7 +115,7 @@ class BrandController extends Controller
     }
 
     public function showDeleted(){
-        $this->authorize('manage_users');
+        // $this->authorize('manage_users');
     $Brands=Brand::onlyTrashed()->get();
     return response()->json([
         'data' =>MainResource::collection($Brands),
@@ -125,7 +125,7 @@ class BrandController extends Controller
 
     public function restore(string $id)
     {
-       $this->authorize('manage_users');
+    //    $this->authorize('manage_users');
     $Brand = Brand::withTrashed()->where('id', $id)->first();
     if (!$Brand) {
         return response()->json([

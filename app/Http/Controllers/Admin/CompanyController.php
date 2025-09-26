@@ -71,6 +71,7 @@ class CompanyController extends Controller
 
 public function edit()
 {
+     $this->authorize('manage_users');
     $admin = JWTAuth::parseToken()->authenticate();
     $company = $admin->company;
 
@@ -127,6 +128,7 @@ public function edit()
 
     public function destroy($id)
 {
+     $this->authorize('manage_users');
     $company = Company::findOrFail($id);
     $company->delete();
 
