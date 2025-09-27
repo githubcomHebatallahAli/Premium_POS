@@ -127,7 +127,8 @@ class TransactionController extends Controller
 
     return response()->json([
         'data' => new TransactionResource($transaction),
-        'availableBalance' => $transaction->remainingAmount,
+        // 'availableBalance' => $transaction->remainingAmount,
+        'availableBalance' => number_format($transaction->remainingAmount, 2, '.', ','), 
         'message' => 'تم تنفيذ العملية بنجاح.',
     ]);
 }
@@ -235,7 +236,8 @@ class TransactionController extends Controller
 
     return response()->json([
         'data' => new TransactionResource($transaction),
-        'availableBalance' => $transaction->remainingAmount,
+        // 'availableBalance' => $transaction->remainingAmount,
+        'availableBalance' => number_format($transaction->remainingAmount, 2, '.', ','), 
         'message' => "تم تحديث العملية بنجاح.",
     ]);
 }
