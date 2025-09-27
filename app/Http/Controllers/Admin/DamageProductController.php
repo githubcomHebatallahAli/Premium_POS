@@ -404,10 +404,6 @@ public function return(SupplierReturnRequest $request, string $id)
 }
 
 
-
-
-
-
     public function destroy(string $id){
 
     return $this->destroyModel(DamageProduct::class, DamageProductResource::class, $id);
