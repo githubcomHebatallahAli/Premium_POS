@@ -20,8 +20,11 @@ class TransactionResource extends JsonResource
             'admin' => new AdminRegisterResource($this->admin),
             'purpose' => new PurposeResource($this->purpose),
             'type'=> $this ->type,
-            'amount'=> $this ->amount,
-            'remainingAmount'=> $this ->remainingAmount,
+            // 'amount'=> $this ->amount,
+            // 'remainingAmount'=> $this ->remainingAmount,
+
+            'amount' => number_format($this->amount, 2, '.', ','), 
+            'remainingAmount' => number_format($this->remainingAmount, 2, '.', ','), 
             'description'=> $this ->description,
             'creationDate' => $this -> creationDate,
         ];
